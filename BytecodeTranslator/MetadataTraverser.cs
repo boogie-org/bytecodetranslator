@@ -64,6 +64,9 @@ namespace BytecodeTranslator {
     /// </summary>
     /// 
     public override void Visit(ITypeDefinition typeDefinition) {
+
+      if (!this.sink.TranslateType(typeDefinition)) return;
+
       var savedPrivateTypes = this.privateTypes;
       this.privateTypes = new List<ITypeDefinition>();
 
@@ -596,6 +599,7 @@ namespace BytecodeTranslator {
         base.Visit(methodCall);
       }
     }
+
     #endregion
 
   }
