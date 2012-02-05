@@ -58,7 +58,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewILToCodeModel", "..\..\C
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 17
+		SccNumberOfProjects = 18
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://vstfcodebox:8080/tfs/psi
 		SccProjectUniqueName0 = ..\\..\\CCICodeBox\\CoreObjectModel\\CodeModel\\CodeModel.csproj
@@ -146,6 +146,11 @@ Global
 		SccAuxPath16 = http://vstfcodebox:8080/tfs/psi
 		SccLocalPath16 = ..\\..\\ccicodebox\\CodeGenerators\\ControlAndDataFlowGraph
 		SccProvider16 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName17 = ..\\..\\ccicodebox\\Converters\\NewILToCodeModel\\NewILToCodeModel.csproj
+		SccProjectName17 = $/cci/Converters/NewILToCodeModel
+		SccAuxPath17 = http://vstfcodebox:8080/tfs/psi
+		SccLocalPath17 = ..\\..\\ccicodebox\\Converters\\NewILToCodeModel
+		SccProvider17 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = BCT.vsmdi
