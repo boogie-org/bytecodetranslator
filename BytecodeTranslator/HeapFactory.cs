@@ -435,7 +435,7 @@ procedure {:inline 1} System.Threading.Thread.Start$System.Object(this: Ref, par
 {
   call {:async} Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object($ThreadDelegate(this), parameter$in);
 }
-procedure {:inline 1} Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object(this: Ref, obj$in: Ref) {
+procedure Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object(this: Ref, obj$in: Ref) {
   $Exception := null;
   call System.Threading.ParameterizedThreadStart.Invoke$System.Object(this, obj$in);
 }
@@ -449,7 +449,7 @@ procedure {:inline 1} System.Threading.Thread.Start(this: Ref)
 {
   call {:async} Wrapper_System.Threading.ThreadStart.Invoke($ThreadDelegate(this));
 }
-procedure {:inline 1} Wrapper_System.Threading.ThreadStart.Invoke(this: Ref) {
+procedure Wrapper_System.Threading.ThreadStart.Invoke(this: Ref) {
   $Exception := null;
   call System.Threading.ThreadStart.Invoke(this);
 }
@@ -470,7 +470,8 @@ procedure {:inline 1} DelegateAdd(a: Ref, b: Ref) returns (c: Ref)
     else 
     {
         call c := Alloc();
-        assume $Delegate(c) == MultisetPlus($Delegate(a), $Delegate(b));
+        assume $RefToDelegate(c) == $RefToDelegate(a) || $RefToDelegate(c) == $RefToDelegate(b);
+        assume $RefToDelegateMultiset(c) == MultisetPlus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b));
     }
 }
 
@@ -486,21 +487,22 @@ procedure {:inline 1} DelegateRemove(a: Ref, b: Ref) returns (c: Ref)
     {
         c := a;
     } 
-    else if (MultisetMinus($Delegate(a), $Delegate(b)) == MultisetEmpty)
+    else if (MultisetMinus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b)) == MultisetEmpty)
     {
         c := null;
     }
     else 
     {
         call c := Alloc();
-        assume $Delegate(c) == MultisetMinus($Delegate(a), $Delegate(b));
+        assume $RefToDelegateMultiset(c) == MultisetMinus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b));
     }
 }
 
 procedure {:inline 1} DelegateCreate(d: Delegate) returns (c: Ref)
 {
     call c := Alloc();
-    assume $Delegate(c) == MultisetSingleton(d);
+    assume $RefToDelegate(c) == d;
+    assume $RefToDelegateMultiset(c) == MultisetSingleton(d);
 }
 
 procedure {:inline 1} System.String.op_Equality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool);
@@ -550,10 +552,13 @@ implementation System.Windows.Controls.Primitives.ToggleButton.get_IsChecked($th
 
 ";
 
-    [RepresentationFor("$Delegate", "function $Delegate(Ref): DelegateMultiset;")]
-    public Bpl.Function Delegate = null;
+    [RepresentationFor("$RefToDelegate", "function $RefToDelegate(Ref): Delegate;")]
+    public Bpl.Function RefToDelegate = null;
 
-    [RepresentationFor("$DelegateCons", "function {:constructor} $DelegateCons($Method: int, $Receiver: Ref, $TypeParameters: Type): Delegate;")]
+    [RepresentationFor("$RefToDelegateMultiset", "function $RefToDelegateMultiset(Ref): DelegateMultiset;")]
+    public Bpl.Function RefToDelegateMultiset = null;
+
+    [RepresentationFor("$RefToDelegateMultisetCons", "function {:constructor} $RefToDelegateMultisetCons($Method: int, $Receiver: Ref, $TypeParameters: Type): Delegate;")]
     public Bpl.DatatypeConstructor DelegateCons = null;
 
     public Bpl.Function DelegateMethod {
