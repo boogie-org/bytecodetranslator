@@ -18,37 +18,37 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TranslationPlugins", "TranslationPlugins\TranslationPlugins.csproj", "{8C242D42-9714-440F-884D-F64F09E78C7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeModel", "..\..\CCICodePlex\Ast\Sources\CodeModel\CodeModel.csproj", "{035FEA7F-0D36-4AE4-B694-EC45191B9AF2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeModel", "..\CCICodePlex\Ast\Sources\CodeModel\CodeModel.csproj", "{035FEA7F-0D36-4AE4-B694-EC45191B9AF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeModelToIL", "..\..\CCICodePlex\Ast\Sources\CodeModelToIL\CodeModelToIL.csproj", "{CEB76EA1-A168-49B0-A410-2C4195FEE86F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeModelToIL", "..\CCICodePlex\Ast\Sources\CodeModelToIL\CodeModelToIL.csproj", "{CEB76EA1-A168-49B0-A410-2C4195FEE86F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractExtractor", "..\..\CCICodePlex\Ast\Sources\ContractExtractor\ContractExtractor.csproj", "{0703D916-A881-45E6-A5CD-6BC50E2E30E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractExtractor", "..\CCICodePlex\Ast\Sources\ContractExtractor\ContractExtractor.csproj", "{0703D916-A881-45E6-A5CD-6BC50E2E30E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlAndDataFlowGraph", "..\..\CCICodePlex\Ast\Metadata\Sources\ControlAndDataFlowGraph\ControlAndDataFlowGraph.csproj", "{2596EFB0-87AE-42CE-89EB-84F35D6350D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlAndDataFlowGraph", "..\CCICodePlex\Ast\Metadata\Sources\ControlAndDataFlowGraph\ControlAndDataFlowGraph.csproj", "{2596EFB0-87AE-42CE-89EB-84F35D6350D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGarbageCollect", "..\..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj", "{60CD0C85-1E4A-4068-A4EC-D15B7981A908}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGarbageCollect", "..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj", "{60CD0C85-1E4A-4068-A4EC-D15B7981A908}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGenerator", "..\..\CCICodePlex\Ast\Metadata\Sources\ILGenerator\ILGenerator.csproj", "{08156C78-403A-4112-AD81-8646AC51CD2F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGenerator", "..\CCICodePlex\Ast\Metadata\Sources\ILGenerator\ILGenerator.csproj", "{08156C78-403A-4112-AD81-8646AC51CD2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetadataHelper", "..\..\CCICodePlex\Ast\Metadata\Sources\MetadataHelper\MetadataHelper.csproj", "{4A34A3C5-6176-49D7-A4C5-B2B671247F8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetadataHelper", "..\CCICodePlex\Ast\Metadata\Sources\MetadataHelper\MetadataHelper.csproj", "{4A34A3C5-6176-49D7-A4C5-B2B671247F8F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetadataModel", "..\..\CCICodePlex\Ast\Metadata\Sources\MetadataModel\MetadataModel.csproj", "{33CAB640-0D03-43DF-81BD-22CDC6C0A597}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetadataModel", "..\CCICodePlex\Ast\Metadata\Sources\MetadataModel\MetadataModel.csproj", "{33CAB640-0D03-43DF-81BD-22CDC6C0A597}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MutableCodeModel", "..\..\CCICodePlex\Ast\Sources\MutableCodeModel\MutableCodeModel.csproj", "{319E150C-8F33-49E7-81CA-30F02F9BA90A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MutableCodeModel", "..\CCICodePlex\Ast\Sources\MutableCodeModel\MutableCodeModel.csproj", "{319E150C-8F33-49E7-81CA-30F02F9BA90A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MutableMetadataModel", "..\..\CCICodePlex\Ast\Metadata\Sources\MutableMetadataModel\MutableMetadataModel.csproj", "{319E151C-8F33-49E7-81C9-30F02F9BA90A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MutableMetadataModel", "..\CCICodePlex\Ast\Metadata\Sources\MutableMetadataModel\MutableMetadataModel.csproj", "{319E151C-8F33-49E7-81C9-30F02F9BA90A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewILToCodeModel", "..\..\CCICodePlex\Ast\Sources\NewILToCodeModel\NewILToCodeModel.csproj", "{A555D4CB-F16F-4049-A8CF-180B8A05C755}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewILToCodeModel", "..\CCICodePlex\Ast\Sources\NewILToCodeModel\NewILToCodeModel.csproj", "{A555D4CB-F16F-4049-A8CF-180B8A05C755}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdbReader", "..\..\CCICodePlex\Ast\Metadata\Sources\PdbReader\PdbReader.csproj", "{A6A31B03-7C3D-4DE6-AA73-BE88116BC40A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdbReader", "..\CCICodePlex\Ast\Metadata\Sources\PdbReader\PdbReader.csproj", "{A6A31B03-7C3D-4DE6-AA73-BE88116BC40A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdbWriter", "..\..\CCICodePlex\Ast\Metadata\Sources\PdbWriter\PdbWriter.csproj", "{6D83F687-ABB5-40B3-915E-CA53DA0EB7F3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdbWriter", "..\CCICodePlex\Ast\Metadata\Sources\PdbWriter\PdbWriter.csproj", "{6D83F687-ABB5-40B3-915E-CA53DA0EB7F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeReader", "..\..\CCICodePlex\Ast\Metadata\Sources\PeReader\PeReader.csproj", "{34B9A0CE-DF18-4CBC-8F7A-90C2B74338D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeReader", "..\CCICodePlex\Ast\Metadata\Sources\PeReader\PeReader.csproj", "{34B9A0CE-DF18-4CBC-8F7A-90C2B74338D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeWriter", "..\..\CCICodePlex\Ast\Metadata\Sources\PeWriter\PeWriter.csproj", "{304A8B0B-851B-4AA6-A17D-5F87F39C5E5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeWriter", "..\CCICodePlex\Ast\Metadata\Sources\PeWriter\PeWriter.csproj", "{304A8B0B-851B-4AA6-A17D-5F87F39C5E5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SourceModel", "..\..\CCICodePlex\Ast\Metadata\Sources\SourceModel\SourceModel.csproj", "{4B0054FD-124A-4037-9965-BDB55E6BF389}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SourceModel", "..\CCICodePlex\Ast\Metadata\Sources\SourceModel\SourceModel.csproj", "{4B0054FD-124A-4037-9965-BDB55E6BF389}"
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
