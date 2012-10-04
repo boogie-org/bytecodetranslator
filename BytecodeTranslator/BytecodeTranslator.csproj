@@ -88,24 +88,14 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AbsInt, Version=1.0.21126.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Binaries\AbsInt.dll</HintPath>
+    <Reference Include="Basetypes">
+      <HintPath>..\BoogieBinaries\Basetypes.dll</HintPath>
     </Reference>
-    <Reference Include="AIFramework, Version=1.0.21126.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Binaries\AIFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="Basetypes, Version=1.0.21126.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Binaries\Basetypes.dll</HintPath>
-    </Reference>
-    <Reference Include="Core, Version=1.0.21126.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Binaries\Core.dll</HintPath>
+    <Reference Include="Core">
+      <HintPath>..\BoogieBinaries\Core.dll</HintPath>
     </Reference>
     <Reference Include="ParserHelper">
-      <HintPath>..\..\Binaries\ParserHelper.dll</HintPath>
+      <HintPath>..\BoogieBinaries\ParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -155,47 +145,47 @@
     <Content Include="Readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj">
       <Project>{60CD0C85-1E4A-4068-A4EC-D15B7981A908}</Project>
       <Name>ILGarbageCollect</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\MetadataHelper\MetadataHelper.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\MetadataHelper\MetadataHelper.csproj">
       <Project>{4A34A3C5-6176-49D7-A4C5-B2B671247F8F}</Project>
       <Name>MetadataHelper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\MetadataModel\MetadataModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\MetadataModel\MetadataModel.csproj">
       <Project>{33CAB640-0D03-43DF-81BD-22CDC6C0A597}</Project>
       <Name>MetadataModel</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\MutableMetadataModel\MutableMetadataModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\MutableMetadataModel\MutableMetadataModel.csproj">
       <Project>{319E151C-8F33-49E7-81C9-30F02F9BA90A}</Project>
       <Name>MutableMetadataModel</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\PdbReader\PdbReader.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\PdbReader\PdbReader.csproj">
       <Project>{A6A31B03-7C3D-4DE6-AA73-BE88116BC40A}</Project>
       <Name>PdbReader</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\PeReader\PeReader.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\PeReader\PeReader.csproj">
       <Project>{34B9A0CE-DF18-4CBC-8F7A-90C2B74338D5}</Project>
       <Name>PeReader</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Metadata\Sources\SourceModel\SourceModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\SourceModel\SourceModel.csproj">
       <Project>{4B0054FD-124A-4037-9965-BDB55E6BF389}</Project>
       <Name>SourceModel</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Sources\CodeModel\CodeModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Sources\CodeModel\CodeModel.csproj">
       <Project>{035FEA7F-0D36-4AE4-B694-EC45191B9AF2}</Project>
       <Name>CodeModel</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Sources\ContractExtractor\ContractExtractor.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Sources\ContractExtractor\ContractExtractor.csproj">
       <Project>{0703D916-A881-45E6-A5CD-6BC50E2E30E2}</Project>
       <Name>ContractExtractor</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Sources\MutableCodeModel\MutableCodeModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Sources\MutableCodeModel\MutableCodeModel.csproj">
       <Project>{319E150C-8F33-49E7-81CA-30F02F9BA90A}</Project>
       <Name>MutableCodeModel</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\CCICodePlex\Ast\Sources\NewILToCodeModel\NewILToCodeModel.csproj">
+    <ProjectReference Include="..\..\CCICodePlex\Ast\Sources\NewILToCodeModel\NewILToCodeModel.csproj">
       <Project>{A555D4CB-F16F-4049-A8CF-180B8A05C755}</Project>
       <Name>NewILToCodeModel</Name>
     </ProjectReference>
