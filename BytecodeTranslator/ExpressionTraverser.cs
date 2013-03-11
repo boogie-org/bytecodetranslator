@@ -662,14 +662,14 @@ namespace BytecodeTranslator
       var proc = TranslateArgumentsAndReturnProcedure(methodCallToken, methodCall.MethodToCall, resolvedMethod, methodCall.IsStaticCall ? null : methodCall.ThisArgument, methodCall.Arguments, out inexpr, out outvars, out thisExpr, out toBoxed);
       string methodname = proc.Name;
       var translateAsFunctionCall = proc is Bpl.Function;
-      Bpl.QKeyValue attrib = null;
+      bool isAsync = false;
 
       // this code structure is quite chaotic, and some code needs to be evaluated regardless, hence the try-finally
       try {
         if (!translateAsFunctionCall) {
           foreach (var a in resolvedMethod.Attributes) {
             if (TypeHelper.GetTypeName(a.Type).EndsWith("AsyncAttribute")) {
-              attrib = new Bpl.QKeyValue(methodCallToken, "async", new List<object>(), null);
+                isAsync = true;
             }
           }
         }
@@ -701,10 +701,8 @@ namespace BytecodeTranslator
             return;
           } else {
             EmitLineDirective(methodCallToken);
-            if (attrib != null)
-              call = new Bpl.CallCmd(methodCallToken, methodname, inexpr, outvars, attrib);
-            else
-              call = new Bpl.CallCmd(methodCallToken, methodname, inexpr, outvars);
+            call = new Bpl.CallCmd(methodCallToken, methodname, inexpr, outvars);
+            call.IsAsync = isAsync;
             this.StmtTraverser.StmtBuilder.Add(call);
           }
         }

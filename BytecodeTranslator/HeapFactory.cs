@@ -451,7 +451,7 @@ procedure {:inline 1} System.Threading.Thread.#ctor$System.Threading.Parameteriz
 }
 procedure {:inline 1} System.Threading.Thread.Start$System.Object(this: Ref, parameter$in: Ref)
 {
-  call {:async} Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object($ThreadDelegate(this), parameter$in);
+  async call Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object($ThreadDelegate(this), parameter$in);
 }
 procedure Wrapper_System.Threading.ParameterizedThreadStart.Invoke$System.Object(this: Ref, obj$in: Ref) {
   $Exception := null;
@@ -465,7 +465,7 @@ procedure {:inline 1} System.Threading.Thread.#ctor$System.Threading.ThreadStart
 }
 procedure {:inline 1} System.Threading.Thread.Start(this: Ref) 
 {
-  call {:async} Wrapper_System.Threading.ThreadStart.Invoke($ThreadDelegate(this));
+  async call Wrapper_System.Threading.ThreadStart.Invoke($ThreadDelegate(this));
 }
 procedure Wrapper_System.Threading.ThreadStart.Invoke(this: Ref) {
   $Exception := null;
