@@ -183,9 +183,10 @@ namespace BytecodeTranslator {
           base.TraverseChildren(methodCall);
           return;
         }
-        var containingType = TypeHelper.UninstantiateAndUnspecialize(methodCall.MethodToCall.ContainingType);
+        var containingType = methodCall.MethodToCall.ContainingType;
+        var templateOfContainingType = TypeHelper.UninstantiateAndUnspecialize(methodCall.MethodToCall.ContainingType);
         List<ITypeReference> subTypesOfContainingType;
-        if (!this.subTypes.TryGetValue(containingType, out subTypesOfContainingType)) {
+        if (!this.subTypes.TryGetValue(templateOfContainingType, out subTypesOfContainingType)) {
           base.TraverseChildren(methodCall);
           return;
         }
