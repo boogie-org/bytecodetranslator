@@ -13,6 +13,52 @@ using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 
 namespace BytecodeTranslator {
+
+      class RelaxedTypeEquivalenceComparer : IEqualityComparer<ITypeReference> {
+
+      private RelaxedTypeEquivalenceComparer(bool resolveTypes = false) {
+        this.resolveTypes = resolveTypes;
+      }
+
+      bool resolveTypes;
+
+      /// <summary>
+      /// A singleton instance of RelaxedTypeEquivalenceComparer that is safe to use in all contexts.
+      /// </summary>
+      internal static RelaxedTypeEquivalenceComparer instance = new RelaxedTypeEquivalenceComparer();
+
+      /// <summary>
+      /// A singleton instance of RelaxedTypeEquivalenceComparer that is safe to use in all contexts.
+      /// </summary>
+      internal static RelaxedTypeEquivalenceComparer resolvingInstance = new RelaxedTypeEquivalenceComparer(true);
+
+      /// <summary>
+      /// Determines whether the specified objects are equal.
+      /// </summary>
+      /// <param name="x">The first object to compare.</param>
+      /// <param name="y">The second object to compare.</param>
+      /// <returns>
+      /// true if the specified objects are equal; otherwise, false.
+      /// </returns>
+      public bool Equals(ITypeReference x, ITypeReference y) {
+        if (x == null) return y == null;
+        var result = TypeHelper.TypesAreEquivalentAssumingGenericMethodParametersAreEquivalentIfTheirIndicesMatch(x, y, this.resolveTypes);
+        return result;
+      }
+
+      /// <summary>
+      /// Returns a hash code for this instance.
+      /// </summary>
+      /// <param name="r">The r.</param>
+      /// <returns>
+      /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+      /// </returns>
+      public int GetHashCode(ITypeReference r) {
+        return (int)r.InternedKey;
+      }
+
+    }
+
   class WholeProgram : TraverserFactory {
 
     public override TranslationPlugins.Translator getTranslator(Sink sink, IDictionary<IUnit, IContractProvider> contractProviders, IDictionary<IUnit, PdbReader> pdbReaders) {
@@ -27,7 +73,7 @@ namespace BytecodeTranslator {
     /// traversal. (But the table is organized so that subTypes[T] is the list of type definitions
     /// that are direct subtypes of T.)
     /// </summary>
-    readonly public Dictionary<ITypeReference, List<ITypeReference>> subTypes = new Dictionary<ITypeReference, List<ITypeReference>>();
+    readonly public Dictionary<ITypeReference, List<ITypeReference>> subTypes = new Dictionary<ITypeReference, List<ITypeReference>>(RelaxedTypeEquivalenceComparer.resolvingInstance);
 
     public override BCTMetadataTraverser MakeMetadataTraverser(Sink sink,
       IDictionary<IUnit, IContractProvider> contractProviders, // TODO: remove this parameter?
@@ -75,18 +121,21 @@ namespace BytecodeTranslator {
         }
 
         public override void TraverseChildren(ITypeDefinition typeDefinition) {
+          ITypeReference tr;
           foreach (var baseClass in typeDefinition.BaseClasses) {
-            if (!this.subTypes.ContainsKey(baseClass)) {
-              this.subTypes[baseClass] = new List<ITypeReference>();
+            tr = TypeHelper.UninstantiateAndUnspecialize(baseClass);
+            if (!this.subTypes.ContainsKey(tr)) {
+              this.subTypes[tr] = new List<ITypeReference>();
             }
-            this.subTypes[baseClass].Add(typeDefinition);
+            this.subTypes[tr].Add(typeDefinition);
           }
 
           foreach (var iface in typeDefinition.Interfaces) {
-            if (!this.subTypes.ContainsKey(iface)) {
-              this.subTypes[iface] = new List<ITypeReference>();
+            tr = TypeHelper.UninstantiateAndUnspecialize(iface);
+            if (!this.subTypes.ContainsKey(tr)) {
+              this.subTypes[tr] = new List<ITypeReference>();
             }
-            this.subTypes[iface].Add(typeDefinition);
+            this.subTypes[tr].Add(typeDefinition);
           }
           base.TraverseChildren(typeDefinition);
         }
@@ -134,7 +183,7 @@ namespace BytecodeTranslator {
           base.TraverseChildren(methodCall);
           return;
         }
-        var containingType = methodCall.MethodToCall.ContainingType;
+        var containingType = TypeHelper.UninstantiateAndUnspecialize(methodCall.MethodToCall.ContainingType);
         List<ITypeReference> subTypesOfContainingType;
         if (!this.subTypes.TryGetValue(containingType, out subTypesOfContainingType)) {
           base.TraverseChildren(methodCall);
