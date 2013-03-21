@@ -183,10 +183,9 @@ namespace BytecodeTranslator {
           base.TraverseChildren(methodCall);
           return;
         }
-        var containingType = methodCall.MethodToCall.ContainingType;
-        var templateOfContainingType = TypeHelper.UninstantiateAndUnspecialize(methodCall.MethodToCall.ContainingType);
+        var containingType = TypeHelper.UninstantiateAndUnspecialize(methodCall.MethodToCall.ContainingType);
         List<ITypeReference> subTypesOfContainingType;
-        if (!this.subTypes.TryGetValue(templateOfContainingType, out subTypesOfContainingType)) {
+        if (!this.subTypes.TryGetValue(containingType, out subTypesOfContainingType)) {
           base.TraverseChildren(methodCall);
           return;
         }
@@ -281,13 +280,18 @@ namespace BytecodeTranslator {
             MethodToCall = op_Type_Equality,
             Type = this.sink.host.PlatformType.SystemBoolean,
           };
-          var thenValue = new MethodCall() {
+          Expression thenValue = new MethodCall() {
             Arguments = new List<IExpression>(methodCall.Arguments),
             IsStaticCall = false,
             IsVirtualCall = false,
             MethodToCall = m,
             ThisArgument = methodCall.ThisArgument,
-            Type = t,
+            Type = m.Type,
+          };
+          thenValue = new Conversion() {
+            Type = m.Type,
+            TypeAfterConversion = methodCall.Type,
+            ValueToConvert = thenValue,
           };
           if (turnIntoStatements) {
             ifStatement = new ConditionalStatement() {
@@ -375,7 +379,8 @@ namespace BytecodeTranslator {
         Contract.Ensures(Contract.ForAll(Contract.Result<IEnumerable<IMethodReference>>(), x => x != null));
 
         foreach (IMethodImplementation methodImplementation in typeDefinition.ExplicitImplementationOverrides) {
-          if (ifaceMethod.InternedKey == methodImplementation.ImplementedMethod.InternedKey)
+          var implementedInterfaceMethod = MemberHelper.UninstantiateAndUnspecialize(methodImplementation.ImplementedMethod);
+          if (ifaceMethod.InternedKey == implementedInterfaceMethod.InternedKey)
             yield return methodImplementation.ImplementingMethod;
         }
         var mems = TypeHelper.GetMethod(typeDefinition, ifaceMethod.Name, ifaceMethod.Parameters.Select(p => p.Type).ToArray());
