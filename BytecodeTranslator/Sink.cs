@@ -96,34 +96,19 @@ namespace BytecodeTranslator {
     public readonly string AllocationMethodName = "Alloc";
     public readonly string StaticFieldFunction = "ClassRepr";
     public readonly string ReferenceTypeName = "Ref";
-
-    public readonly string DelegateCreateName = "DelegateCreate";
-    public readonly string DelegateAddName = "DelegateAdd";
-    public readonly string DelegateRemoveName = "DelegateRemove";
-
-    public Bpl.Expr ReadDelegateMultiset(Bpl.Expr delegateReference) {
-      return new Bpl.NAryExpr(delegateReference.tok, new Bpl.FunctionCall(Heap.RefToDelegateMultiset), new Bpl.ExprSeq(delegateReference));
+    
+    public Bpl.Expr ReadMethod(Bpl.Expr methodExpr, Bpl.Expr delegateExpr) {
+      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.RefToDelegateMethod), new Bpl.ExprSeq(methodExpr, delegateExpr));
     }
 
-    public Bpl.Expr ReadDelegate(Bpl.Expr delegateReference) {
-      return new Bpl.NAryExpr(delegateReference.tok, new Bpl.FunctionCall(Heap.RefToDelegate), new Bpl.ExprSeq(delegateReference));
+    public Bpl.Expr ReadReceiver(Bpl.Expr methodExpr, Bpl.Expr delegateExpr)
+    {
+      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.RefToDelegateReceiver), new Bpl.ExprSeq(methodExpr, delegateExpr));
     }
 
-    public Bpl.Expr ReadMethod(Bpl.Expr delegateExpr) {
-      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.DelegateMethod), new Bpl.ExprSeq(delegateExpr));
-    }
-
-    public Bpl.Expr ReadReceiver(Bpl.Expr delegateExpr) {
-      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.DelegateReceiver), new Bpl.ExprSeq(delegateExpr));
-    }
-
-    public Bpl.Expr ReadTypeParameters(Bpl.Expr delegateExpr) {
-      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.DelegateTypeParameters), new Bpl.ExprSeq(delegateExpr));
-    }
-
-    public Bpl.Expr CreateDelegate(Bpl.Expr methodExpr, Bpl.Expr instanceExpr, Bpl.Expr typeParameterExpr) {
-      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.DelegateCons), 
-                              new Bpl.ExprSeq(methodExpr, instanceExpr, typeParameterExpr));
+    public Bpl.Expr ReadTypeParameters(Bpl.Expr methodExpr, Bpl.Expr delegateExpr)
+    {
+      return new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.heap.RefToDelegateTypeParameters), new Bpl.ExprSeq(methodExpr, delegateExpr));
     }
 
     public readonly Bpl.Program TranslatedProgram;
@@ -1336,22 +1321,46 @@ namespace BytecodeTranslator {
     public Dictionary<uint, Tuple<ITypeDefinition, HashSet<IMethodDefinition>>> delegateTypeToDelegates =
       new Dictionary<uint, Tuple<ITypeDefinition, HashSet<IMethodDefinition>>>();
 
+    public Dictionary<uint, string> delegateTypeToDelegateCreateName = new Dictionary<uint,string>();
+    public Dictionary<uint, string> delegateTypeToDelegateAddName = new Dictionary<uint, string>();
+    public Dictionary<uint, string> delegateTypeToDelegateRemoveName = new Dictionary<uint, string>();
+
     public void AddDelegate(ITypeDefinition type, IMethodDefinition defn) {
-      if (type == Dummy.Type) {
-      }
+      AddDelegateType(type);
       uint key = type.InternedKey;
-      if (!delegateTypeToDelegates.ContainsKey(key))
-        delegateTypeToDelegates[key] = new Tuple<ITypeDefinition, HashSet<IMethodDefinition>>(type, new HashSet<IMethodDefinition>());
       FindOrCreateProcedure(defn);
       delegateTypeToDelegates[key].Item2.Add(defn);
     }
 
     public void AddDelegateType(ITypeDefinition type) {
-      if (type == Dummy.Type) {
-      }
       uint key = type.InternedKey;
       if (!delegateTypeToDelegates.ContainsKey(key))
-        delegateTypeToDelegates[key] = new Tuple<ITypeDefinition, HashSet<IMethodDefinition>>(type, new HashSet<IMethodDefinition>());
+      {
+          delegateTypeToDelegates[key] = new Tuple<ITypeDefinition, HashSet<IMethodDefinition>>(type, new HashSet<IMethodDefinition>());
+          string typename = TypeHelper.GetTypeName(type, NameFormattingOptions.DocumentationId);
+          typename = TranslationHelper.TurnStringIntoValidIdentifier(typename);
+          delegateTypeToDelegateCreateName[key] = typename + "$CreateDelegate";
+          delegateTypeToDelegateAddName[key] = typename + "$AddDelegate";
+          delegateTypeToDelegateRemoveName[key] = typename + "$RemoveDelegate";
+      }
+    }
+
+    public string DelegateCreate(ITypeDefinition type)
+    {
+        AddDelegateType(type);
+        return delegateTypeToDelegateCreateName[type.InternedKey];
+    }
+
+    public string DelegateAdd(ITypeDefinition type)
+    {
+        AddDelegateType(type);
+        return delegateTypeToDelegateAddName[type.InternedKey];
+    }
+
+    public string DelegateRemove(ITypeDefinition type)
+    {
+        AddDelegateType(type);
+        return delegateTypeToDelegateRemoveName[type.InternedKey];
     }
 
     private Dictionary<IMethodDefinition, Bpl.Constant> delegateMethods = new Dictionary<IMethodDefinition, Bpl.Constant>();

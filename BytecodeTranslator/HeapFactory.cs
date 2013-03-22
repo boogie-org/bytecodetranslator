@@ -75,26 +75,6 @@ namespace BytecodeTranslator {
 
     #region Boogie Types
 
-    [RepresentationFor("Delegate", "type {:datatype} Delegate;")]
-    public Bpl.TypeCtorDecl DelegateTypeDecl = null;
-    public Bpl.CtorType DelegateType;
-
-    [RepresentationFor("DelegateMultiset", "type DelegateMultiset = [Delegate]int;")]
-    public Bpl.TypeSynonymDecl DelegateMultisetTypeDecl = null;
-    public Bpl.TypeSynonymAnnotation DelegateMultisetType;
-
-    [RepresentationFor("MultisetEmpty", "const unique MultisetEmpty: DelegateMultiset;")]
-    public Bpl.Constant MultisetEmpty = null;
-
-    [RepresentationFor("MultisetSingleton", "function {:inline true} MultisetSingleton(x: Delegate): DelegateMultiset { MultisetEmpty[x := 1] }")]
-    public Bpl.Function MultisetSingleton = null;
-
-    [RepresentationFor("MultisetPlus", "function {:inline true} MultisetPlus(x: DelegateMultiset, y: DelegateMultiset): DelegateMultiset { DelegateMapadd(x, y) }")]
-    public  Bpl.Function MultisetPlus = null;
-
-    [RepresentationFor("MultisetMinus", "function {:inline true} MultisetMinus(x: DelegateMultiset, y: DelegateMultiset): DelegateMultiset { DelegateMapiteint(DelegateMapgt(x, y), DelegateMapsub(x, y), DelegateMapconstint(0)) }")]
-    public Bpl.Function MultisetMinus = null;
-
     [RepresentationFor("Field", "type Field;")]
     public Bpl.TypeCtorDecl FieldTypeDecl = null;
     public Bpl.CtorType FieldType;
@@ -384,52 +364,12 @@ procedure {:inline 1} Alloc() returns (x: Ref)
   $Alloc[x] := true;
 }
 
-function {:builtin ""MapAdd""} DelegateMapadd([Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapSub""} DelegateMapsub([Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapMul""} DelegateMapmul([Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapDiv""} DelegateMapdiv([Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapMod""} DelegateMapmod([Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapConst""} DelegateMapconstint(int) : [Delegate]int;
-function {:builtin ""MapConst""} DelegateMapconstbool(bool) : [Delegate]bool;
-function {:builtin ""MapAnd""} DelegateMapand([Delegate]bool, [Delegate]bool) : [Delegate]bool;
-function {:builtin ""MapOr""} DelegateMapor([Delegate]bool, [Delegate]bool) : [Delegate]bool;
-function {:builtin ""MapNot""} DelegateMapnot([Delegate]bool) : [Delegate]bool;
-function {:builtin ""MapIte""} DelegateMapiteint([Delegate]bool, [Delegate]int, [Delegate]int) : [Delegate]int;
-function {:builtin ""MapIte""} DelegateMapitebool([Delegate]bool, [Delegate]bool, [Delegate]bool) : [Delegate]bool;
-function {:builtin ""MapLe""} DelegateMaple([Delegate]int, [Delegate]int) : [Delegate]bool;
-function {:builtin ""MapLt""} DelegateMaplt([Delegate]int, [Delegate]int) : [Delegate]bool;
-function {:builtin ""MapGe""} DelegateMapge([Delegate]int, [Delegate]int) : [Delegate]bool;
-function {:builtin ""MapGt""} DelegateMapgt([Delegate]int, [Delegate]int) : [Delegate]bool;
-function {:builtin ""MapEq""} DelegateMapeq([Delegate]int, [Delegate]int) : [Delegate]bool;
-function {:builtin ""MapIff""} DelegateMapiff([Delegate]bool, [Delegate]bool) : [Delegate]bool;
-function {:builtin ""MapImp""} DelegateMapimp([Delegate]bool, [Delegate]bool) : [Delegate]bool;
-axiom MultisetEmpty == DelegateMapconstint(0);
-
 function IsRef(u: Union) : (bool);
 axiom (forall x: bool :: {Bool2Union(x)} Union2Bool(Bool2Union(x)) == x && !IsRef(Bool2Union(x)));
 axiom (forall x: int :: {Int2Union(x)} Union2Int(Int2Union(x)) == x && !IsRef(Int2Union(x)));
 axiom (forall x: Real :: {Real2Union(x)} Union2Real(Real2Union(x)) == x && !IsRef(Real2Union(x)));
 axiom (forall x: Ref :: {Ref2Union(x)} Union2Ref(Ref2Union(x)) == x && IsRef(Ref2Union(x)));
 axiom (forall x: Ref :: {Struct2Union(x)} Union2Struct(Struct2Union(x)) == x && !IsRef(Struct2Union(x)));
-
-
-/*
-// Subtype is reflexive
-axiom (forall t: Type :: $Subtype(t, t) );
-
-// Subtype is anti-symmetric
-axiom (forall t0 : Type, t1 : Type :: { $Subtype(t0, t1), $Subtype(t1, t0) }
-        $Subtype(t0, t1) && $Subtype(t1, t0) ==> (t0 == t1) );
-
-// Subtype is transitive
-axiom (forall t0 : Type, t1 : Type, t2 : Type :: { $Subtype(t0, t1), $Subtype(t1, t2) }
-        $Subtype(t0, t1) && $Subtype(t1, t2) ==> $Subtype(t0, t2) );
-
-// Incomparable subtypes: the subtrees are disjoint for (some) subtypes (those that imply single inheritance)
-function oneDown(t0 : Type, t1 : Type) : Type; // uninterpreted function with no axioms
-axiom (forall C : Type, D : Type :: { $DisjointSubtree(D, C) }
-        $DisjointSubtree(D, C) <==> (forall z : Type :: $Subtype(z, D) ==> oneDown(C,z) == D) );
-*/
 
 function $TypeOfInv(Ref): Type;
 axiom (forall t: Type :: {$TypeOf(t)} $TypeOfInv($TypeOf(t)) == t);
@@ -473,91 +413,30 @@ procedure Wrapper_System.Threading.ThreadStart.Invoke(this: Ref) {
 }
 procedure {:extern} System.Threading.ThreadStart.Invoke(this: Ref);
 
-procedure {:inline 1} DelegateAdd(a: Ref, b: Ref) returns (c: Ref)
-{
-  var d: Delegate;
-
-    if (a == null)
-    {
-        c := b;
-    }
-    else if (b == null)
-    {
-        c := a;
-    }
-    else 
-    {
-        call c := Alloc();
-        assume $RefToDelegate(c) == $RefToDelegate(a) || $RefToDelegate(c) == $RefToDelegate(b);
-        assume $RefToDelegateMultiset(c) == MultisetPlus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b));
-    }
-}
-
-procedure {:inline 1} DelegateRemove(a: Ref, b: Ref) returns (c: Ref)
-{
-  var d: Delegate;
-
-    if (a == null)
-    {
-        c := null;
-    }
-    else if (b == null)
-    {
-        c := a;
-    } 
-    else if (MultisetMinus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b)) == MultisetEmpty)
-    {
-        c := null;
-    }
-    else 
-    {
-        call c := Alloc();
-        assume $RefToDelegateMultiset(c) == MultisetMinus($RefToDelegateMultiset(a), $RefToDelegateMultiset(b));
-        assume $RefToDelegateMultiset(c)[$RefToDelegate(c)] > 0;
-    }
-}
-
-procedure {:inline 1} DelegateCreate(d: Delegate) returns (c: Ref)
-{
-    call c := Alloc();
-    assume $RefToDelegate(c) == d;
-    assume $RefToDelegateMultiset(c) == MultisetSingleton(d);
-}
-
 procedure {:inline 1} System.String.op_Equality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool);
 procedure {:inline 1} System.String.op_Inequality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool);
 
-implementation System.String.op_Equality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool) {
+implementation System.String.op_Equality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool) 
+{
   $result := (a$in == b$in);
 }
 
-implementation System.String.op_Inequality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool) {
+implementation System.String.op_Inequality$System.String$System.String(a$in: Ref, b$in: Ref) returns ($result: bool) 
+{
   $result := (a$in != b$in);
 }
 
 ";
 
-    [RepresentationFor("$RefToDelegate", "function $RefToDelegate(Ref): Delegate;")]
-    public Bpl.Function RefToDelegate = null;
+    [RepresentationFor("$RefToDelegateMethod", "function $RefToDelegateMethod(int, Ref): bool;")]
+    public Bpl.Function RefToDelegateMethod = null;
 
-    [RepresentationFor("$RefToDelegateMultiset", "function $RefToDelegateMultiset(Ref): DelegateMultiset;")]
-    public Bpl.Function RefToDelegateMultiset = null;
+    [RepresentationFor("$RefToDelegateReceiver", "function $RefToDelegateReceiver(int, Ref): Ref;")]
+    public Bpl.Function RefToDelegateReceiver = null;
 
-    [RepresentationFor("$RefToDelegateMultisetCons", "function {:constructor} $RefToDelegateMultisetCons($Method: int, $Receiver: Ref, $TypeParameters: Type): Delegate;")]
-    public Bpl.DatatypeConstructor DelegateCons = null;
-
-    public Bpl.Function DelegateMethod {
-      get { return DelegateCons.selectors[0]; }
-    }
-
-    public Bpl.Function DelegateReceiver {
-      get { return DelegateCons.selectors[1]; }
-    }
-
-    public Bpl.Function DelegateTypeParameters {
-      get { return DelegateCons.selectors[2]; }
-    }
-
+    [RepresentationFor("$RefToDelegateTypeParameters", "function $RefToDelegateTypeParameters(int, Ref): Type;")]
+    public Bpl.Function RefToDelegateTypeParameters = null;
+    
     [RepresentationFor("$Exception", "var {:thread_local} $Exception: Ref;")]
     public Bpl.GlobalVariable ExceptionVariable = null;
   }

@@ -44,8 +44,6 @@ namespace BytecodeTranslator {
       var b = RepresentationFor.ParsePrelude(prelude, this, out program);
       if (b) {
         this.UnionType = new Bpl.CtorType(this.UnionTypeDecl.tok, this.UnionTypeDecl, new Bpl.TypeSeq());
-        this.DelegateType = new Bpl.CtorType(this.DelegateTypeDecl.tok, this.DelegateTypeDecl, new Bpl.TypeSeq());
-        this.DelegateMultisetType = new Bpl.TypeSynonymAnnotation(this.DelegateMultisetTypeDecl.tok, this.DelegateMultisetTypeDecl, new Bpl.TypeSeq());
         this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
         this.TypeType = new Bpl.CtorType(this.TypeTypeDecl.tok, this.TypeTypeDecl, new Bpl.TypeSeq());
         this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());
@@ -174,8 +172,6 @@ namespace BytecodeTranslator {
       var b = RepresentationFor.ParsePrelude(prelude, this, out program);
       if (b) {
         this.UnionType = new Bpl.CtorType(this.UnionTypeDecl.tok, this.UnionTypeDecl, new Bpl.TypeSeq());
-        this.DelegateType = new Bpl.CtorType(this.DelegateTypeDecl.tok, this.DelegateTypeDecl, new Bpl.TypeSeq());
-        this.DelegateMultisetType = new Bpl.TypeSynonymAnnotation(this.DelegateMultisetTypeDecl.tok, this.DelegateMultisetTypeDecl, new Bpl.TypeSeq());
         this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
         this.TypeType = new Bpl.CtorType(this.TypeTypeDecl.tok, this.TypeTypeDecl, new Bpl.TypeSeq());
         this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());

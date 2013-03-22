@@ -788,7 +788,7 @@ namespace BytecodeTranslator
 
       System.Diagnostics.Debug.Assert(outvars.Count == 0);
       outvars.Insert(0, Bpl.Expr.Ident(local));
-      string methodName = isEventAdd ? this.sink.DelegateAddName : this.sink.DelegateRemoveName;
+      string methodName = isEventAdd ? this.sink.DelegateAdd(eventDef.Type.ResolvedType) : this.sink.DelegateRemove(eventDef.Type.ResolvedType);
       call = new Bpl.CallCmd(methodCallToken, methodName, inexpr, outvars);
       this.StmtTraverser.StmtBuilder.Add(call);
       if (methodCall.IsStaticCall) {
@@ -1600,8 +1600,8 @@ namespace BytecodeTranslator
                          new Bpl.FunctionCall(this.sink.FindOrCreateNaryTypeFunction(typeParameterExprs.Length)),
                          typeParameterExprs);
       this.StmtTraverser.StmtBuilder.Add(
-        new Bpl.CallCmd(cloc, this.sink.DelegateCreateName,
-                        new Bpl.ExprSeq(this.sink.CreateDelegate(methodExpr, instanceExpr, typeParameterExpr)), 
+        new Bpl.CallCmd(cloc, this.sink.DelegateCreate(unspecializedType),
+                        new Bpl.ExprSeq(methodExpr, instanceExpr, typeParameterExpr), 
                         new Bpl.IdentifierExprSeq(Bpl.Expr.Ident(a))));
       TranslatedExpressions.Push(Bpl.Expr.Ident(a));
     }
