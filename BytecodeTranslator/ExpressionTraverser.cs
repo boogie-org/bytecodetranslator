@@ -397,23 +397,20 @@ namespace BytecodeTranslator
     /// then this returns a "unboxed" expression, i.e., the value as a ref.
     /// Otherwise it just translates the underlying expression and boxes it.
     /// </summary>
-    public override void TraverseChildren(IAddressOf addressOf)
-    {
+    public override void TraverseChildren(IAddressOf addressOf) {
       var t = addressOf.Expression.Type;
       var boogieT = this.sink.CciTypeToBoogie(t);
 
+      object container = addressOf.Expression.Definition;
+      IExpression/*?*/ instance = addressOf.Expression.Instance;
+      this.LoadAddressOf(container, instance);
       if (t is IGenericParameterReference && boogieT == this.sink.Heap.UnionType) {
         // then the expression will be represented by something of type Box
         // but the address of it must be a ref, so do the conversion
-        this.Traverse(addressOf.Expression);
         var e = this.TranslatedExpressions.Pop();
         this.TranslatedExpressions.Push(this.sink.Heap.FromUnion(addressOf.Token(), this.sink.Heap.RefType, e));
-      } else {
-        object container = addressOf.Expression.Definition;
-        IExpression/*?*/ instance = addressOf.Expression.Instance;
-        this.LoadAddressOf(container, instance);
-        return;
       }
+      return;
     }
     #endregion
 
