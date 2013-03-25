@@ -45,7 +45,6 @@ namespace BytecodeTranslator {
       if (b) {
         this.UnionType = new Bpl.CtorType(this.UnionTypeDecl.tok, this.UnionTypeDecl, new Bpl.TypeSeq());
         this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
-        this.TypeType = new Bpl.CtorType(this.TypeTypeDecl.tok, this.TypeTypeDecl, new Bpl.TypeSeq());
         this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());
         this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new Bpl.TypeSeq());
       } 
@@ -173,7 +172,6 @@ namespace BytecodeTranslator {
       if (b) {
         this.UnionType = new Bpl.CtorType(this.UnionTypeDecl.tok, this.UnionTypeDecl, new Bpl.TypeSeq());
         this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
-        this.TypeType = new Bpl.CtorType(this.TypeTypeDecl.tok, this.TypeTypeDecl, new Bpl.TypeSeq());
         this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());
         this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new Bpl.TypeSeq());
       }

@@ -92,9 +92,12 @@ namespace BytecodeTranslator {
     [RepresentationFor("null", "const unique null : Ref;")]
     public Bpl.Constant NullRef;
 
-    [RepresentationFor("Type", "type {:datatype} Type;")]
-    public Bpl.TypeCtorDecl TypeTypeDecl = null;
-    public Bpl.CtorType TypeType;
+    [RepresentationFor("Type", "type Type = Ref;")]
+    public Bpl.TypeSynonymDecl TypeTypeDecl = null;
+    public Bpl.Type TypeType { get { return TypeTypeDecl.Body; } }
+
+    [RepresentationFor("$TypeConstructor", "function $TypeConstructor(Ref): int;")]
+    public Bpl.Function TypeConstructorFunction = null;
 
     [RepresentationFor("Real", "type Real;")]
     protected Bpl.TypeCtorDecl RealTypeDecl = null;
@@ -332,9 +335,6 @@ namespace BytecodeTranslator {
       return callDynamicType;
     }
 
-    [RepresentationFor("$TypeOf", "function $TypeOf(Type): Ref;")]
-    public Bpl.Function TypeOfFunction = null;
-
     [RepresentationFor("$As", "function $As(Ref, Type): Ref;")]
     public Bpl.Function AsFunction = null;
 
@@ -371,12 +371,9 @@ axiom (forall x: Real :: {Real2Union(x)} Union2Real(Real2Union(x)) == x && !IsRe
 axiom (forall x: Ref :: {Ref2Union(x)} Union2Ref(Ref2Union(x)) == x && IsRef(Ref2Union(x)));
 axiom (forall x: Ref :: {Struct2Union(x)} Union2Struct(Struct2Union(x)) == x && !IsRef(Struct2Union(x)));
 
-function $TypeOfInv(Ref): Type;
-axiom (forall t: Type :: {$TypeOf(t)} $TypeOfInv($TypeOf(t)) == t);
-
 procedure {:inline 1} System.Object.GetType(this: Ref) returns ($result: Ref)
 {
-  $result := $TypeOf($DynamicType(this));
+  $result := $DynamicType(this);
 }
 
 axiom Union2Int($DefaultHeapValue) == 0;

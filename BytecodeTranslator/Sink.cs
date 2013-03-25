@@ -246,8 +246,7 @@ namespace BytecodeTranslator {
         var isExtern = this.assemblyBeingTranslated != null &&
                 !TypeHelper.GetDefiningUnitReference(field.ContainingType).UnitIdentity.Equals(this.assemblyBeingTranslated.UnitIdentity);
         if (isExtern) {
-          var attrib = new Bpl.QKeyValue(Bpl.Token.NoToken, "extern", new List<object>(1), null);
-          v.Attributes = attrib;
+            v.AddAttribute("extern");
         }
 
         this.declaredFields.Add(field, v);
@@ -291,8 +290,7 @@ namespace BytecodeTranslator {
           var isExtern = this.assemblyBeingTranslated != null &&
             !TypeHelper.GetDefiningUnitReference(e.ContainingType).UnitIdentity.Equals(this.assemblyBeingTranslated.UnitIdentity);
           if (isExtern) {
-            var attrib = new Bpl.QKeyValue(Bpl.Token.NoToken, "extern", new List<object>(1), null);
-            v.Attributes = attrib;
+              v.AddAttribute("extern");
           }
 
           this.TranslatedProgram.TopLevelDeclarations.Add(v);
@@ -617,8 +615,7 @@ namespace BytecodeTranslator {
           decl = proc;
         }
         if (this.assemblyBeingTranslated != null && !TypeHelper.GetDefiningUnitReference(method.ContainingType).UnitIdentity.Equals(this.assemblyBeingTranslated.UnitIdentity)) {
-          var attrib = new Bpl.QKeyValue(tok, "extern", new List<object>(1), null);
-          decl.Attributes = attrib;
+            decl.AddAttribute("extern");
         }
 
         string newName = null;
@@ -920,16 +917,20 @@ namespace BytecodeTranslator {
       return method.GenericParameterCount + ConsolidatedGenericParameterCount(method.ContainingType);
     }
 
+    public Bpl.Expr FindOrCreateTypeReferenceInCodeContext(ITypeReference typeReference)
+    {
+        return this.FindOrCreateTypeReference(typeReference, true);
+    }
+
     /// <summary>
     /// Creates a fresh variable that represents the type of
     /// <paramref name="type"/> in the Bpl program. I.e., its
     /// value represents the expression "typeof(type)".
     /// </summary>
     public Bpl.Expr FindOrCreateTypeReference(ITypeReference type, bool codeContext = false) {
-
       var gtir = type as IGenericTypeInstanceReference;
       if (gtir != null) {
-        var genericType = FindOrDefineType(gtir.GenericType.ResolvedType);
+        var genericType = FindOrDefineType(gtir.GenericType.ResolvedType).Constructor;
         var gArgs = new Bpl.ExprSeq();
         foreach (var a in gtir.GenericArguments) {
           var a_prime = FindOrCreateTypeReference(a, codeContext);
@@ -942,15 +943,8 @@ namespace BytecodeTranslator {
       IGenericTypeParameter gtp = type as IGenericTypeParameter;
       if (gtp != null) {
         if (codeContext) {
-          var selectorName = gtp.Name.Value;
-          selectorName = TranslationHelper.TurnStringIntoValidIdentifier(selectorName);
-          var typeName = TypeHelper.GetTypeName(gtp.DefiningType, NameFormattingOptions.DocumentationId);
-          typeName = TranslationHelper.TurnStringIntoValidIdentifier(typeName);
-          var funcName = String.Format("{0}#{1}", selectorName, typeName);
-          Bpl.IToken tok = Bpl.Token.NoToken;
-          var identExpr = Bpl.Expr.Ident(new Bpl.LocalVariable(tok, new Bpl.TypedIdent(tok, funcName, this.Heap.TypeType)));
-          var funcCall = new Bpl.FunctionCall(identExpr);
-          var thisArg = new Bpl.IdentifierExpr(tok, this.ThisVariable);
+          var funcCall = new Bpl.FunctionCall(this.FindOrDefineType(gtp.DefiningType).Selector(gtp));
+          var thisArg = new Bpl.IdentifierExpr(Bpl.Token.NoToken, this.ThisVariable);
           var dynType = this.Heap.DynamicType(thisArg);
           var nary = new Bpl.NAryExpr(Bpl.Token.NoToken, funcCall, new Bpl.ExprSeq(dynType));
           return nary;
@@ -982,8 +976,9 @@ namespace BytecodeTranslator {
 
       if (consolidatedTypeArguments.Count > 0) {
         this.FindOrCreateTypeReference(uninstantiatedGenericType);
+        // Mike: why are we accessing the raw dictionary instead of using FindOrDefineType as below
         var k = uninstantiatedGenericType.InternedKey;
-        var f2 = this.declaredTypeFunctions[k];
+        var f2 = this.declaredTypeFunctions[k].Constructor;
         Bpl.ExprSeq args = new Bpl.ExprSeq();
         foreach (ITypeReference p in consolidatedTypeArguments) {
           args.Add(FindOrCreateTypeReference(p, codeContext));
@@ -992,7 +987,7 @@ namespace BytecodeTranslator {
         return naryExpr;
       }
 
-      var  f = FindOrDefineType(type.ResolvedType);
+      var  f = FindOrDefineType(type.ResolvedType).Constructor;
       var fCall = new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(f), new Bpl.ExprSeq());
       return fCall;
     }
@@ -1031,48 +1026,97 @@ namespace BytecodeTranslator {
       }
       return formal;
     }
-  
+
+    public class TypeInfo
+    {
+        private Bpl.Function constructor;
+        private Bpl.Constant constructorId;
+        private Dictionary<uint, Bpl.Function> typeParameterToSelector;
+        public Bpl.Function Constructor { get { return constructor; } }
+        public Bpl.Constant ConstructorId { get { return constructorId; } }
+        public Bpl.Function Selector(IGenericTypeParameter typeParameter) { return typeParameterToSelector[typeParameter.InternedKey]; }
+        public TypeInfo(Sink sink, ITypeDefinition type)
+        {
+            bool isExtern = sink.assemblyBeingTranslated != null &&
+                            !TypeHelper.GetDefiningUnitReference(type).UnitIdentity.Equals(sink.assemblyBeingTranslated.UnitIdentity);
+
+            typeParameterToSelector = new Dictionary<uint, Bpl.Function>();
+            string typeName = TypeHelper.GetTypeName(type, NameFormattingOptions.DocumentationId);
+            typeName = TranslationHelper.TurnStringIntoValidIdentifier(typeName);
+            var tok = type.Token();
+            var inputs = new Bpl.VariableSeq();
+            foreach (var t in TranslationHelper.ConsolidatedGenericParameters(type))
+            {
+                var formal = sink.FindOrDefineTypeParameter(t);
+                inputs.Add(formal);
+
+                var selector = new Bpl.Function(
+                    Bpl.Token.NoToken, String.Format("{0}${1}", formal.Name, typeName),
+                    new Bpl.VariableSeq(new Bpl.Formal(Bpl.Token.NoToken, new Bpl.TypedIdent(Bpl.Token.NoToken, "parent", sink.Heap.TypeType), true)),
+                    new Bpl.Formal(Bpl.Token.NoToken, new Bpl.TypedIdent(Bpl.Token.NoToken, "child", sink.Heap.TypeType), false));
+                if (isExtern)
+                {
+                    selector.AddAttribute("extern");
+                }
+                typeParameterToSelector[t.InternedKey] = selector;
+                sink.TranslatedProgram.TopLevelDeclarations.Add(selector);
+            }
+            Bpl.Variable output = new Bpl.Formal(tok, new Bpl.TypedIdent(tok, "result", sink.Heap.TypeType), false);
+            constructor = new Bpl.Function(tok, typeName, inputs, output);
+            if (isExtern)
+            {
+                constructor.AddAttribute("extern");
+            }
+            sink.TranslatedProgram.TopLevelDeclarations.Add(this.constructor);
+
+            constructorId = new Bpl.Constant(Bpl.Token.NoToken, new Bpl.TypedIdent(Bpl.Token.NoToken, typeName, Bpl.Type.Int), true);
+            if (isExtern)
+            {
+                constructorId.AddAttribute("extern");
+            } 
+            sink.TranslatedProgram.TopLevelDeclarations.Add(constructorId);
+        }
+    }
+
+    public void GenerateDynamicTypeAssume(Bpl.StmtListBuilder builder, Bpl.IToken token, Bpl.Expr o, ITypeReference type)
+    {
+        Bpl.Expr typeExpr = this.FindOrCreateTypeReferenceInCodeContext(type);
+        builder.Add(new Bpl.AssumeCmd(token, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, this.Heap.DynamicType(o), typeExpr)));
+
+        Bpl.NAryExpr naryExpr = typeExpr as Bpl.NAryExpr;
+        if (naryExpr == null) return;
+        ITypeReference uninstantiatedGenericType = GetUninstantiatedGenericType(type);
+        TypeInfo typeInfo = FindOrDefineType(uninstantiatedGenericType.ResolvedType);
+        builder.Add(
+            new Bpl.AssumeCmd(token,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                new Bpl.NAryExpr(token, new Bpl.FunctionCall(this.Heap.TypeConstructorFunction), new Bpl.ExprSeq(this.Heap.DynamicType(o))),
+                Bpl.Expr.Ident(typeInfo.ConstructorId))));
+        if (naryExpr.Args.Length > 0)
+        {
+            int i = 0;
+            foreach (IGenericTypeParameter gtp in TranslationHelper.ConsolidatedGenericParameters(uninstantiatedGenericType))
+            {
+                var x = new Bpl.NAryExpr(token, new Bpl.FunctionCall(typeInfo.Selector(gtp)), new Bpl.ExprSeq(typeExpr));
+                builder.Add(new Bpl.AssumeCmd(token, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, x, naryExpr.Args[i])));
+            }
+        }
+    }
+
+
     /// <summary>
     /// Every type is represented as a function.
     /// Non-generic types are nullary functions.
     /// Generic types are n-ary functions, where n is the number of generic parameters.
     /// </summary>
-    public Bpl.Function FindOrDefineType(ITypeDefinition type) {
-
-      Bpl.Function f;
-
+    public TypeInfo FindOrDefineType(ITypeDefinition type) {
+      TypeInfo typeInfo;
       var key = type.InternedKey;
-      if (this.declaredTypeFunctions.TryGetValue(key, out f))
-        return f;
-
-      var numParameters = ConsolidatedGenericParameterCount(type);
-
-      //f = this.Heap.CreateTypeFunction(type, numParameters);
-
-      string typename = TypeHelper.GetTypeName(type, NameFormattingOptions.DocumentationId);
-      typename = TranslationHelper.TurnStringIntoValidIdentifier(typename);
-      var tok = type.Token();
-      var inputs = new Bpl.VariableSeq();
-      foreach (var t in TranslationHelper.ConsolidatedGenericParameters(type)) {
-        var formal = FindOrDefineTypeParameter(t);
-        inputs.Add(formal);
-      }
-      Bpl.Variable output = new Bpl.Formal(tok, new Bpl.TypedIdent(tok, "result", this.Heap.TypeType), false);
-      Bpl.Function func = new Bpl.Function(tok, typename, inputs, output);
-      func.Attributes = new Bpl.QKeyValue(Bpl.Token.NoToken, "constructor", new List<object>(1), null);
-      f = func;
-
-      this.declaredTypeFunctions.Add(key, f);
-      this.TranslatedProgram.TopLevelDeclarations.Add(f);
-      DeclareParentsNew(type, f);
-
-      bool isExtern = this.assemblyBeingTranslated != null &&
-                      !TypeHelper.GetDefiningUnitReference(type).UnitIdentity.Equals(this.assemblyBeingTranslated.UnitIdentity);
-      if (isExtern) {
-        var attrib = new Bpl.QKeyValue(Bpl.Token.NoToken, "extern", new List<object>(1), null);
-        f.Attributes.AddLast(attrib);
-      }
-      return f;
+      if (this.declaredTypeFunctions.TryGetValue(key, out typeInfo))
+        return typeInfo;
+      typeInfo = new TypeInfo(this, type);
+      this.declaredTypeFunctions.Add(key, typeInfo);
+      return typeInfo;
     }
 
     private void DeclareParentsNew(ITypeDefinition typeDefinition, Bpl.Function typeDefinitionAsBplFunction) {
@@ -1197,9 +1241,8 @@ namespace BytecodeTranslator {
     /// <summary>
     /// The keys to the table are the interned key of the type.
     /// </summary>
-    private Dictionary<uint, Bpl.Function> declaredTypeFunctions = new Dictionary<uint, Bpl.Function>();
-    private List<Bpl.Function> childFunctions = new List<Bpl.Function>();
-
+    private Dictionary<uint, TypeInfo> declaredTypeFunctions = new Dictionary<uint, TypeInfo>();
+    
 
     class MethodComparer : IEqualityComparer<IMethodReference> {
       public bool Equals(IMethodReference x, IMethodReference y) {

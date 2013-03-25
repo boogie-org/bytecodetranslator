@@ -274,9 +274,7 @@ namespace BytecodeTranslator {
       // other := Alloc();
       stmtBuilder.Add(new Bpl.CallCmd(tok, this.sink.AllocationMethodName, new Bpl.ExprSeq(), new Bpl.IdentifierExprSeq(o)));
       // assume DynamicType(other) == S;
-      stmtBuilder.Add(
-        new Bpl.AssumeCmd(tok, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, this.sink.Heap.DynamicType(o), this.sink.FindOrCreateTypeReference(typeDefinition, true)))
-        );
+      this.sink.GenerateDynamicTypeAssume(stmtBuilder, tok, o, typeDefinition);
 
       var localVars = new Bpl.VariableSeq();
 

@@ -33,27 +33,6 @@ namespace BytecodeTranslator
 
     private bool contractContext;
 
-    private Bpl.Expr FindOrCreateTypeReferenceInCodeContext(ITypeReference typeReference) {
-      return this.sink.FindOrCreateTypeReference(typeReference, true);
-
-      IGenericTypeParameter gtp = typeReference as IGenericTypeParameter;
-      if (gtp != null) {
-        var selectorName = gtp.Name.Value;
-        selectorName = TranslationHelper.TurnStringIntoValidIdentifier(selectorName);
-        var typeName = TypeHelper.GetTypeName(gtp.DefiningType, NameFormattingOptions.DocumentationId);
-        typeName = TranslationHelper.TurnStringIntoValidIdentifier(typeName);
-        var funcName = String.Format("{0}#{1}", selectorName, typeName);
-        Bpl.IToken tok = Bpl.Token.NoToken;
-        var identExpr = Bpl.Expr.Ident(new Bpl.LocalVariable(tok, new Bpl.TypedIdent(tok, funcName, this.sink.Heap.TypeType)));
-        var funcCall = new Bpl.FunctionCall(identExpr);
-        var thisArg = new Bpl.IdentifierExpr(tok, this.sink.ThisVariable);
-        var dynType = this.sink.Heap.DynamicType(thisArg);
-        var nary = new Bpl.NAryExpr(Bpl.Token.NoToken, funcCall, new Bpl.ExprSeq(dynType));
-        return nary;
-      }
-      return this.sink.FindOrCreateTypeReference(typeReference);
-    }
-
     private static IMethodDefinition ResolveUnspecializedMethodOrThrow(IMethodReference methodReference) {
       var resolvedMethod = Sink.Unspecialize(methodReference).ResolvedMethod;
       if (resolvedMethod == Dummy.Method) { // avoid downstream errors, fail early
@@ -580,14 +559,7 @@ namespace BytecodeTranslator
       this.StmtTraverser.StmtBuilder.Add(new Bpl.CallCmd(tok, proc.Name, invars, new List<Bpl.IdentifierExpr>()));
 
       // Generate an assumption about the dynamic type of the just allocated object
-      this.StmtTraverser.StmtBuilder.Add(
-          new Bpl.AssumeCmd(tok,
-            Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-            this.sink.Heap.DynamicType(locExpr),
-            this.FindOrCreateTypeReferenceInCodeContext(typ)
-            )
-            )
-          );
+      this.sink.GenerateDynamicTypeAssume(this.StmtTraverser.StmtBuilder, tok, locExpr, typ);
 
       this.TranslatedExpressions.Push(locExpr);
     }
@@ -635,18 +607,18 @@ namespace BytecodeTranslator
 
           IExpression objectToTest = callToGetType.ThisArgument;
 
-          // generate: is#T($DynamicType(o))
-          var typeFunction = this.sink.FindOrDefineType(typeToTest.TypeToGet.ResolvedType);
-          Contract.Assume(typeFunction != null);
-          var funcName = String.Format("is#{0}", typeFunction.Name);
-          var identExpr = Bpl.Expr.Ident(new Bpl.LocalVariable(methodCallToken, new Bpl.TypedIdent(methodCallToken, funcName, Bpl.Type.Bool)));
-          var funcCall = new Bpl.FunctionCall(identExpr);
+          // generate: $TypeConstructor($DynamicType(o)) == TypeConstructorId
+          var typeConstructorId = this.sink.FindOrDefineType(typeToTest.TypeToGet.ResolvedType).ConstructorId;
+          Contract.Assume(typeConstructorId != null);
 
           this.Traverse(objectToTest);
           var e = this.TranslatedExpressions.Pop();
 
           var exprs = new Bpl.ExprSeq(this.sink.Heap.DynamicType(e));
-          Bpl.Expr typeTestExpression = new Bpl.NAryExpr(methodCallToken, funcCall, exprs);
+          Bpl.Expr typeTestExpression = 
+              Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, 
+                              new Bpl.NAryExpr(methodCallToken, new Bpl.FunctionCall(sink.Heap.TypeConstructorFunction), exprs),
+                              Bpl.Expr.Ident(typeConstructorId));
           if (MemberHelper.GetMethodSignature(resolvedMethod).Equals("System.Type.op_Inequality"))
             typeTestExpression = Bpl.Expr.Unary( methodCallToken, Bpl.UnaryOperator.Opcode.Not, typeTestExpression);
           this.TranslatedExpressions.Push(typeTestExpression);
@@ -813,14 +785,7 @@ namespace BytecodeTranslator
       this.StmtTraverser.StmtBuilder.Add(new Bpl.CallCmd(methodCallToken, proc.Name, inexpr, outvars));
 
       // Generate an assumption about the dynamic type of the just allocated object
-      this.StmtTraverser.StmtBuilder.Add(
-          new Bpl.AssumeCmd(methodCallToken,
-            Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-            this.sink.Heap.DynamicType(thisExpr),
-            this.FindOrCreateTypeReferenceInCodeContext(methodCall.MethodToCall.ResolvedMethod.ContainingTypeDefinition)
-            )
-            )
-          );
+      this.sink.GenerateDynamicTypeAssume(this.StmtTraverser.StmtBuilder, methodCallToken, thisExpr, methodCall.MethodToCall.ResolvedMethod.ContainingTypeDefinition);
     }
 
     // REVIEW: Does "thisExpr" really need to come back as an identifier? Can't it be a general expression?
@@ -932,13 +897,13 @@ namespace BytecodeTranslator
         List<ITypeReference> consolidatedTypeArguments = new List<ITypeReference>();
         Sink.GetConsolidatedTypeArguments(consolidatedTypeArguments, methodToCall.ContainingType);
         foreach (ITypeReference typeReference in consolidatedTypeArguments) {
-          inexpr.Add(this.FindOrCreateTypeReferenceInCodeContext(typeReference));
+          inexpr.Add(this.sink.FindOrCreateTypeReferenceInCodeContext(typeReference));
         }
       }
       IGenericMethodInstanceReference methodInstanceReference = methodToCall as IGenericMethodInstanceReference;
       if (methodInstanceReference != null) {
         foreach (ITypeReference typeReference in methodInstanceReference.GenericArguments) {
-          inexpr.Add(this.FindOrCreateTypeReferenceInCodeContext(typeReference));
+          inexpr.Add(this.sink.FindOrCreateTypeReferenceInCodeContext(typeReference));
         }
       }
 
@@ -1525,14 +1490,7 @@ namespace BytecodeTranslator
         this.StmtTraverser.StmtBuilder.Add(new Bpl.CallCmd(token, proc.Name, inexpr, outvars));
 
         // Generate an assumption about the dynamic type of the just allocated object
-        this.StmtTraverser.StmtBuilder.Add(
-            new Bpl.AssumeCmd(token,
-              Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-              this.sink.Heap.DynamicType(Bpl.Expr.Ident(a)),
-              this.FindOrCreateTypeReferenceInCodeContext(createObjectInstance.Type)
-              )
-              )
-            );
+        sink.GenerateDynamicTypeAssume(this.StmtTraverser.StmtBuilder, token, Bpl.Expr.Ident(a), createObjectInstance.Type);
       }
       TranslatedExpressions.Push(Bpl.Expr.Ident(a));
     }
@@ -1586,13 +1544,13 @@ namespace BytecodeTranslator
         List<ITypeReference> consolidatedTypeArguments = new List<ITypeReference>();
         Sink.GetConsolidatedTypeArguments(consolidatedTypeArguments, methodToCall.ContainingType);
         foreach (ITypeReference typeReference in consolidatedTypeArguments) {
-          typeParameterExprs.Add(this.FindOrCreateTypeReferenceInCodeContext(typeReference));
+          typeParameterExprs.Add(this.sink.FindOrCreateTypeReferenceInCodeContext(typeReference));
         }
       }
       IGenericMethodInstanceReference methodInstanceReference = methodToCall as IGenericMethodInstanceReference;
       if (methodInstanceReference != null) {
         foreach (ITypeReference typeReference in methodInstanceReference.GenericArguments) {
-          typeParameterExprs.Add(this.FindOrCreateTypeReferenceInCodeContext(typeReference));
+          typeParameterExprs.Add(this.sink.FindOrCreateTypeReferenceInCodeContext(typeReference));
         }
       }
       Bpl.Expr typeParameterExpr =
@@ -2224,7 +2182,7 @@ namespace BytecodeTranslator
     public override void TraverseChildren(ICastIfPossible castIfPossible) {
       base.Traverse(castIfPossible.ValueToCast);
       var exp = TranslatedExpressions.Pop();
-      var e = this.FindOrCreateTypeReferenceInCodeContext(castIfPossible.TargetType);
+      var e = this.sink.FindOrCreateTypeReferenceInCodeContext(castIfPossible.TargetType);
       var callAs = new Bpl.NAryExpr(
         castIfPossible.Token(),
         new Bpl.FunctionCall(this.sink.Heap.AsFunction),
@@ -2234,7 +2192,7 @@ namespace BytecodeTranslator
       return;
     }
     public override void TraverseChildren(ICheckIfInstance checkIfInstance) {
-      var e = this.FindOrCreateTypeReferenceInCodeContext(checkIfInstance.TypeToCheck);
+      var e = this.sink.FindOrCreateTypeReferenceInCodeContext(checkIfInstance.TypeToCheck);
       //var callTypeOf = new Bpl.NAryExpr(
       //  checkIfInstance.Token(),
       //  new Bpl.FunctionCall(this.sink.Heap.TypeOfFunction),
@@ -2468,13 +2426,8 @@ namespace BytecodeTranslator
     }
 
     public override void TraverseChildren(ITypeOf typeOf) {
-      var e = this.FindOrCreateTypeReferenceInCodeContext(typeOf.TypeToGet);
-      var callTypeOf = new Bpl.NAryExpr(
-        typeOf.Token(),
-        new Bpl.FunctionCall(this.sink.Heap.TypeOfFunction),
-        new Bpl.ExprSeq(e)
-        );
-      TranslatedExpressions.Push(callTypeOf);
+      var e = this.sink.FindOrCreateTypeReferenceInCodeContext(typeOf.TypeToGet);
+      TranslatedExpressions.Push(e);
     }
 
     public override void TraverseChildren(IVectorLength vectorLength) {
