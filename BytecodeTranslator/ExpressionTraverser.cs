@@ -387,7 +387,9 @@ namespace BytecodeTranslator
         // then the expression will be represented by something of type Box
         // but the address of it must be a ref, so do the conversion
         var e = this.TranslatedExpressions.Pop();
-        this.TranslatedExpressions.Push(this.sink.Heap.FromUnion(addressOf.Token(), this.sink.Heap.RefType, e));
+        Bpl.Variable a = this.sink.CreateFreshLocal(this.sink.Heap.RefType);
+        this.StmtTraverser.StmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, this.sink.Heap.BoxFromUnion.Name, new Bpl.ExprSeq(e), new Bpl.IdentifierExprSeq(Bpl.Expr.Ident(a))));
+        TranslatedExpressions.Push(Bpl.Expr.Ident(a));
       }
       return;
     }
