@@ -42,8 +42,13 @@ namespace BytecodeTranslator {
       /// </returns>
       public bool Equals(ITypeReference x, ITypeReference y) {
         if (x == null) return y == null;
-        var result = TypeHelper.TypesAreEquivalentAssumingGenericMethodParametersAreEquivalentIfTheirIndicesMatch(x, y, this.resolveTypes);
-        return result;
+        // Type equality done on string names which ignores the dll the type is coming from.  
+        // This is done to enable giving models of classes in stubs.
+        var xName = TypeHelper.GetTypeName(x);
+        var yName = TypeHelper.GetTypeName(y);
+        return xName.Equals(yName);
+        //var result = TypeHelper.TypesAreEquivalentAssumingGenericMethodParametersAreEquivalentIfTheirIndicesMatch(x, y, this.resolveTypes);
+        //return result;
       }
 
       /// <summary>
@@ -54,7 +59,9 @@ namespace BytecodeTranslator {
       /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
       /// </returns>
       public int GetHashCode(ITypeReference r) {
-        return (int)r.InternedKey;
+          var xName = TypeHelper.GetTypeName(r);
+          return xName.GetHashCode();
+        //return (int)r.InternedKey;
       }
 
     }
