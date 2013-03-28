@@ -52,7 +52,7 @@ namespace BytecodeTranslator {
     /// Returns the BPL command that corresponds to assigning the value <paramref name="value"/>
     /// to the field <paramref name="f"/> of the object <paramref name="o"/> (which should be non-null).
     /// </summary>
-    Bpl.Cmd WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType);
+    void WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType, Bpl.StmtListBuilder builder);
 
     /// <summary>
     /// Returns the BPL expression that corresponds to the value of the dynamic type
@@ -99,6 +99,9 @@ namespace BytecodeTranslator {
     [RepresentationFor("$TypeConstructor", "function $TypeConstructor(Ref): int;")]
     public Bpl.Function TypeConstructorFunction = null;
 
+    [RepresentationFor("$UnionConstructor", "function $UnionConstructor(Union): int;")]
+    public Bpl.Function UnionConstructorFunction = null;
+
     [RepresentationFor("Real", "type Real;")]
     protected Bpl.TypeCtorDecl RealTypeDecl = null;
     public Bpl.CtorType RealType;
@@ -109,23 +112,41 @@ namespace BytecodeTranslator {
 
     #region CLR Boxing
 
-    [RepresentationFor("$BoxFromBool", "procedure {:inline 1} $BoxFromBool(b: bool) returns (r: Ref) { call r := Alloc(); assume $BoxedValue(r) == Bool2Union(b); }")]
+    [RepresentationFor("$BoxFromBool", "procedure {:inline 1} $BoxFromBool(b: bool) returns (r: Ref) { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume Union2Bool($BoxedValue(r)) == b; }")]
     public Bpl.Procedure BoxFromBool = null;
 
-    [RepresentationFor("$BoxFromInt", "procedure {:inline 1} $BoxFromInt(i: int) returns (r: Ref) { call r := Alloc(); assume $BoxedValue(r) == Int2Union(i); }")]
+    [RepresentationFor("$BoxFromInt", "procedure {:inline 1} $BoxFromInt(i: int) returns (r: Ref) { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume Union2Int($BoxedValue(r)) == i; }")]
     public Bpl.Procedure BoxFromInt = null;
 
-    [RepresentationFor("$BoxFromReal", "procedure {:inline 1} $BoxFromReal(r: Real) returns (rf: Ref) { call rf := Alloc(); assume $BoxedValue(rf) == Real2Union(r); }")]
+    [RepresentationFor("$BoxFromReal", "procedure {:inline 1} $BoxFromReal(r: Real) returns (rf: Ref) { call rf := Alloc(); assume $TypeConstructor($DynamicType(rf)) == $BoxedType; assume Union2Real($BoxedValue(rf)) == r; }")]
     public Bpl.Procedure BoxFromReal = null;
 
-    [RepresentationFor("$BoxFromStruct", "procedure {:inline 1} $BoxFromStruct(s: Ref) returns (r: Ref) { call r := Alloc(); assume $BoxedValue(r) == Struct2Union(s); }")]
+    [RepresentationFor("$BoxFromStruct", "procedure {:inline 1} $BoxFromStruct(s: Ref) returns (r: Ref) { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume Union2Struct($BoxedValue(r)) == s; }")]
     public Bpl.Procedure BoxFromStruct = null;
 
-    [RepresentationFor("$BoxFromUnion", "procedure {:inline 1} $BoxFromUnion(u: Union) returns (r: Ref) { if (IsRef(u)) { r := Union2Ref(u); } else { call r := Alloc(); assume $BoxedValue(r) == u; } }")]
+    [RepresentationFor("$BoxFromUnion", "procedure {:inline 1} $BoxFromUnion(u: Union) returns (r: Ref) { if ($UnionConstructor(u) == $RefValueType) { r := Union2Ref(u); } else { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume $BoxedValue(r) == u; } }")]
     public Bpl.Procedure BoxFromUnion = null;
 
     [RepresentationFor("$BoxedValue", "function $BoxedValue(r: Ref): Union;")]
     public Bpl.Function BoxedValue = null;
+
+    [RepresentationFor("$BoxedType", "const unique $BoxedType: int;")]
+    public Bpl.Constant BoxedType = null;
+
+    [RepresentationFor("$BoolValueType", "const unique $BoolValueType: int;")]
+    public Bpl.Constant BoolValueType = null;
+
+    [RepresentationFor("$IntValueType", "const unique $IntValueType: int;")]
+    public Bpl.Constant IntValueType = null;
+
+    [RepresentationFor("$RealValueType", "const unique $RealValueType: int;")]
+    public Bpl.Constant RealValueType = null;
+
+    [RepresentationFor("$RefValueType", "const unique $RefValueType: int;")]
+    public Bpl.Constant RefValueType = null;
+
+    [RepresentationFor("$StructValueType", "const unique $StructValueType: int;")]
+    public Bpl.Constant StructValueType = null;
 
     [RepresentationFor("$Unbox2Bool", "function {:inline true} $Unbox2Bool(r: Ref): (bool) { Union2Bool($BoxedValue(r)) }")]
     public Bpl.Function Unbox2Bool = null;
@@ -178,46 +199,90 @@ namespace BytecodeTranslator {
     [RepresentationFor("Struct2Union", "function Struct2Union(structValue: Ref): Union;")]
     public Bpl.Function Struct2Union = null;
 
-    [RepresentationFor("Union2Union", "function {:inline true} Union2Union(u: Union): Union { u }")]
-    public Bpl.Function Union2Union = null;
+    public Bpl.Expr ToUnion(Bpl.IToken tok, Bpl.Type boogieType, Bpl.Expr expr, bool isStruct, Bpl.StmtListBuilder builder)
+    {
+        if (boogieType == UnionType)
+            return expr;
 
-    public Bpl.Expr ToUnion(Bpl.IToken tok, Bpl.Type boogieType, Bpl.Expr expr) {
-      Bpl.Function conversion;
-      if (boogieType == Bpl.Type.Bool)
-        conversion = this.Bool2Union;
-      else if (boogieType == Bpl.Type.Int)
-        conversion = this.Int2Union;
-      else if (boogieType == RefType)
-        conversion = this.Ref2Union;
-      else if (boogieType == RealType)
-        conversion = this.Real2Union;
-      else if (boogieType == UnionType)
-        conversion = this.Union2Union;
-      else
-        throw new InvalidOperationException(String.Format("Unknown Boogie type: '{0}'", boogieType.ToString()));
-
-      var callConversion = new Bpl.NAryExpr(
-        tok,
-        new Bpl.FunctionCall(conversion),
-        new Bpl.ExprSeq(expr)
-        );
-      return callConversion;
+        Bpl.Expr callConversion;
+        if (boogieType == Bpl.Type.Bool)
+        {
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Bool2Union), new Bpl.ExprSeq(expr));
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                    Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                    new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.UnionConstructorFunction), new Bpl.ExprSeq(callConversion)),
+                    Bpl.Expr.Ident(this.BoolValueType))));
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Bool), new Bpl.ExprSeq(callConversion)),
+                                expr)));
+        }
+        else if (boogieType == Bpl.Type.Int)
+        {
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Int2Union), new Bpl.ExprSeq(expr));
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                    Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                    new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.UnionConstructorFunction), new Bpl.ExprSeq(callConversion)),
+                    Bpl.Expr.Ident(this.IntValueType)))); 
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Int), new Bpl.ExprSeq(callConversion)),
+                                expr)));
+        }
+        else if (boogieType == RefType)
+        {
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(isStruct ? this.Struct2Union : this.Ref2Union), new Bpl.ExprSeq(expr));
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                    Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                    new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.UnionConstructorFunction), new Bpl.ExprSeq(callConversion)),
+                    Bpl.Expr.Ident(isStruct ? this.StructValueType : this.RefValueType)))); 
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(isStruct ? this.Union2Struct : this.Union2Ref), new Bpl.ExprSeq(callConversion)),
+                                expr)));
+        }
+        else if (boogieType == RealType)
+        {
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Real2Union), new Bpl.ExprSeq(expr));
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                    Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                    new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.UnionConstructorFunction), new Bpl.ExprSeq(callConversion)),
+                    Bpl.Expr.Ident(this.RealValueType)))); 
+            builder.Add(
+                new Bpl.AssumeCmd(tok,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Real), new Bpl.ExprSeq(callConversion)),
+                                expr)));
+        }
+        else
+        {
+            throw new InvalidOperationException(String.Format("Unknown Boogie type: '{0}'", boogieType.ToString()));
+        }
+        return callConversion;
     }
 
-    public Bpl.Expr FromUnion(Bpl.IToken tok, Bpl.Type boogieType, Bpl.Expr expr) {
+    public Bpl.Expr FromUnion(Bpl.IToken tok, Bpl.Type boogieType, Bpl.Expr expr, bool isStruct) {
+      if (boogieType == UnionType)
+          return expr;
+
       Bpl.Function conversion = null;
       if (boogieType == Bpl.Type.Bool)
         conversion = this.Union2Bool;
       else if (boogieType == Bpl.Type.Int)
         conversion = this.Union2Int;
       else if (boogieType == RefType)
-        conversion = this.Union2Ref;
+        conversion = isStruct ? this.Union2Struct : this.Union2Ref;
       else if (boogieType == RealType)
-        conversion = this.Union2Real;
-      else if (boogieType == UnionType)
-        conversion = this.Union2Union;
+          conversion = this.Union2Real;
       else
-        throw new InvalidOperationException(String.Format("Unknown Boogie type: '{0}'", boogieType.ToString()));
+          throw new InvalidOperationException(String.Format("Unknown Boogie type: '{0}'", boogieType.ToString()));
 
       var callExpr = new Bpl.NAryExpr(
         tok,
@@ -316,7 +381,7 @@ namespace BytecodeTranslator {
 
     public abstract Bpl.Expr ReadHeap(Bpl.Expr o, Bpl.Expr f, AccessType accessType, Bpl.Type unboxType);
 
-    public abstract Bpl.Cmd WriteHeap(Bpl.IToken tok, Bpl.Expr o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType);
+    public abstract void WriteHeap(Bpl.IToken tok, Bpl.Expr o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType, Bpl.StmtListBuilder builder);
 
     [RepresentationFor("$DynamicType", "function $DynamicType(Ref): Type;")]
     protected Bpl.Function DynamicTypeFunction = null;
@@ -363,13 +428,6 @@ procedure {:inline 1} Alloc() returns (x: Ref)
   assume $Alloc[x] == false && x != null;
   $Alloc[x] := true;
 }
-
-function IsRef(u: Union) : (bool);
-axiom (forall x: bool :: {Bool2Union(x)} Union2Bool(Bool2Union(x)) == x && !IsRef(Bool2Union(x)));
-axiom (forall x: int :: {Int2Union(x)} Union2Int(Int2Union(x)) == x && !IsRef(Int2Union(x)));
-axiom (forall x: Real :: {Real2Union(x)} Union2Real(Real2Union(x)) == x && !IsRef(Real2Union(x)));
-axiom (forall x: Ref :: {Ref2Union(x)} Union2Ref(Ref2Union(x)) == x && IsRef(Ref2Union(x)));
-axiom (forall x: Ref :: {Struct2Union(x)} Union2Struct(Struct2Union(x)) == x && !IsRef(Struct2Union(x)));
 
 procedure {:inline 1} System.Object.GetType(this: Ref) returns ($result: Ref)
 {

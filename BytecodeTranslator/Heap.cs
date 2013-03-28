@@ -113,23 +113,25 @@ namespace BytecodeTranslator {
         return Bpl.Expr.Select(field, o);
       }
       else
-        return FromUnion(f.tok, unboxType, Bpl.Expr.Select(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f));
+        return FromUnion(f.tok, unboxType, Bpl.Expr.Select(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f), false);
     }
 
     /// <summary>
     /// Returns the BPL command that corresponds to assigning the value <paramref name="value"/>
     /// to the field <paramref name="f"/> of the object <paramref name="o"/> (which should be non-null).
     /// </summary>
-    public override Bpl.Cmd WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType) {
+    public override void WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType, Bpl.StmtListBuilder builder) {
       Debug.Assert(o != null);
+      Bpl.Cmd cmd;
       if (accessType == AccessType.Struct || accessType == AccessType.Heap) {
         Bpl.IdentifierExpr field = f as Bpl.IdentifierExpr;
         Debug.Assert(field != null);
-        return Bpl.Cmd.MapAssign(tok, field, o, value);
+        cmd = Bpl.Cmd.MapAssign(tok, field, o, value);
       }
       else {
-        return TranslationHelper.BuildAssignCmd(Bpl.Expr.Ident(ArrayContentsVariable), Bpl.Expr.Store(Bpl.Expr.Ident(ArrayContentsVariable), o, Bpl.Expr.Store(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f, ToUnion(f.tok, boxType, value))));
+        cmd = TranslationHelper.BuildAssignCmd(Bpl.Expr.Ident(ArrayContentsVariable), Bpl.Expr.Store(Bpl.Expr.Ident(ArrayContentsVariable), o, Bpl.Expr.Store(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f, ToUnion(f.tok, boxType, value, false, builder))));
       }
+      builder.Add(cmd);
     }
 
   }
@@ -238,7 +240,7 @@ namespace BytecodeTranslator {
         callRead = Bpl.Expr.Select(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f);
 
       // wrap it in the right conversion function
-      var callExpr = FromUnion(f.tok, unboxType, callRead);
+      var callExpr = FromUnion(f.tok, unboxType, callRead, false);
       return callExpr;
     }
 
@@ -246,12 +248,12 @@ namespace BytecodeTranslator {
     /// Returns the BPL command that corresponds to assigning the value <paramref name="value"/>
     /// to the field <paramref name="f"/> of the object <paramref name="o"/> (which should be non-null).
     /// </summary>
-    public override Bpl.Cmd WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType) {
+    public override void WriteHeap(Bpl.IToken tok, Bpl.Expr/*?*/ o, Bpl.Expr f, Bpl.Expr value, AccessType accessType, Bpl.Type boxType, Bpl.StmtListBuilder builder) {
       Debug.Assert(o != null);
 
       Bpl.IdentifierExpr h;
       Bpl.NAryExpr callWrite;
-      var callConversion = ToUnion(f.tok, boxType, value);
+      var callConversion = ToUnion(f.tok, boxType, value, false, builder);
 
       if (accessType == AccessType.Struct || accessType == AccessType.Heap) {
         h = Bpl.Expr.Ident(HeapVariable);
@@ -261,7 +263,7 @@ namespace BytecodeTranslator {
         h = Bpl.Expr.Ident(ArrayContentsVariable);
         callWrite = Bpl.Expr.Store(Bpl.Expr.Ident(ArrayContentsVariable), o, Bpl.Expr.Store(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f, callConversion));
       }
-      return Bpl.Cmd.SimpleAssign(f.tok, h, callWrite);
+      builder.Add(Bpl.Cmd.SimpleAssign(f.tok, h, callWrite));
     }
 
   }

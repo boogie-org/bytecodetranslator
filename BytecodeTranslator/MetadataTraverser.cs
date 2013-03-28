@@ -293,13 +293,11 @@ namespace BytecodeTranslator {
           localVars.Add(bplLocal);
           var cmd = new Bpl.CallCmd(tok, proc2.Name, new List<Bpl.Expr> { e, }, new List<Bpl.IdentifierExpr>{ localExpr, });
           stmtBuilder.Add(cmd);
-          var c = this.sink.Heap.WriteHeap(tok, o, fExp, localExpr, AccessType.Struct, boogieType);
-          stmtBuilder.Add(c);
+          this.sink.Heap.WriteHeap(tok, o, fExp, localExpr, AccessType.Struct, boogieType, stmtBuilder);
         } else {
           // just generate a normal assignment to the field f
           var e = this.sink.Heap.ReadHeap(Bpl.Expr.Ident(proc.InParams[0]), fExp, AccessType.Struct, boogieType);
-          var c = this.sink.Heap.WriteHeap(tok, o, fExp, e, AccessType.Struct, boogieType);
-          stmtBuilder.Add(c);
+          this.sink.Heap.WriteHeap(tok, o, fExp, e, AccessType.Struct, boogieType, stmtBuilder);
         }
       }
 
