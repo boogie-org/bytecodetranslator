@@ -1097,8 +1097,9 @@ namespace BytecodeTranslator {
             int i = 0;
             foreach (IGenericTypeParameter gtp in TranslationHelper.ConsolidatedGenericParameters(uninstantiatedGenericType))
             {
-                var x = new Bpl.NAryExpr(token, new Bpl.FunctionCall(typeInfo.Selector(gtp)), new Bpl.ExprSeq(typeExpr));
+                var x = new Bpl.NAryExpr(token, new Bpl.FunctionCall(typeInfo.Selector(gtp)), new Bpl.ExprSeq(this.Heap.DynamicType(o)));
                 builder.Add(new Bpl.AssumeCmd(token, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, x, naryExpr.Args[i])));
+                i++;
             }
         }
     }
