@@ -2232,8 +2232,7 @@ namespace BytecodeTranslator
         TranslationHelper.IsStruct(conversion.TypeAfterConversion) &&
         boogieTypeOfValue == this.sink.Heap.RefType) {
         // REVIEW: This also applies to conversions from one struct type to another!
-        var e = new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(this.sink.Heap.Unbox2Struct), new Bpl.ExprSeq(exp));
-        TranslatedExpressions.Push(e);
+        TranslatedExpressions.Push(exp);
         return;
       }
 
@@ -2297,8 +2296,8 @@ namespace BytecodeTranslator
           var bplLocal = Bpl.Expr.Ident(this.sink.CreateFreshLocal(typeOfValue));
           var cmd = new Bpl.CallCmd(tok, proc.Name, new List<Bpl.Expr> { exp, }, new List<Bpl.IdentifierExpr> { bplLocal, });
           this.StmtTraverser.StmtBuilder.Add(cmd);
-          exp = bplLocal;
-          boxOperator = this.sink.Heap.BoxFromStruct;
+          TranslatedExpressions.Push(bplLocal);
+          return;
         }  else {
           if (boogieTypeOfValue != this.sink.Heap.UnionType)
             throw new NotImplementedException(msg);

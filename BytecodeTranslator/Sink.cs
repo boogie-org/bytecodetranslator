@@ -791,6 +791,8 @@ namespace BytecodeTranslator {
       Contract.Requires(structType.IsValueType);
 
       ProcedureInfo procAndFormalMap;
+      // Generate what amounts to the template definition of the copy ctor.
+      structType = TypeHelper.UninstantiateAndUnspecialize(structType);
       var typename = TranslationHelper.TurnStringIntoValidIdentifier(TypeHelper.GetTypeName(structType));
       var procName = typename + ".#copy_ctor";
       if (!this.declaredStructCopyCtors.TryGetValue(procName, out procAndFormalMap)) {

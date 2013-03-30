@@ -121,9 +121,6 @@ namespace BytecodeTranslator {
     [RepresentationFor("$BoxFromReal", "procedure {:inline 1} $BoxFromReal(r: Real) returns (rf: Ref) { call rf := Alloc(); assume $TypeConstructor($DynamicType(rf)) == $BoxedType; assume Union2Real($BoxedValue(rf)) == r; }")]
     public Bpl.Procedure BoxFromReal = null;
 
-    [RepresentationFor("$BoxFromStruct", "procedure {:inline 1} $BoxFromStruct(s: Ref) returns (r: Ref) { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume Union2Struct($BoxedValue(r)) == s; }")]
-    public Bpl.Procedure BoxFromStruct = null;
-
     [RepresentationFor("$BoxFromUnion", "procedure {:inline 1} $BoxFromUnion(u: Union) returns (r: Ref) { if ($UnionConstructor(u) == $RefValueType) { r := Union2Ref(u); } else { call r := Alloc(); assume $TypeConstructor($DynamicType(r)) == $BoxedType; assume $BoxedValue(r) == u; } }")]
     public Bpl.Procedure BoxFromUnion = null;
 
@@ -156,9 +153,6 @@ namespace BytecodeTranslator {
 
     [RepresentationFor("$Unbox2Real", "function {:inline true} $Unbox2Real(r: Ref): (Real) { Union2Real($BoxedValue(r)) }")]
     public Bpl.Function Unbox2Real = null;
-
-    [RepresentationFor("$Unbox2Struct", "function {:inline true} $Unbox2Struct(r: Ref): (Ref) { Union2Struct($BoxedValue(r)) }")]
-    public Bpl.Function Unbox2Struct = null;
 
     [RepresentationFor("$Unbox2Union", "function {:inline true} $Unbox2Union(r: Ref): (Union) { $BoxedValue(r) }")]
     public Bpl.Function Unbox2Union = null;
