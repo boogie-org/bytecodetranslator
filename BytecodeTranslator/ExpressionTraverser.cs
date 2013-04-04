@@ -1057,14 +1057,14 @@ namespace BytecodeTranslator
         var pop = addressDereference.Address as IPopValue;
         if (pop != null) {
           var popValue = this.sink.operandStack.Pop();
-          var be = popValue as IBoundExpression;
-          if (be != null) {
-            TranslateAssignment(tok, be.Definition, be.Instance, source);
-            return;
-          }
-          var ao = popValue as IAddressOf;
-          if (ao != null) {
-            TranslateAssignment(tok, ao.Expression.Definition, ao.Expression.Instance, source);
+          var identifierExpr = popValue as Bpl.IdentifierExpr;
+          if (identifierExpr != null) {
+            Contract.Assume(instance == null);
+            this.Traverse(source);
+            var e = this.TranslatedExpressions.Pop();
+            cmd = Bpl.Cmd.SimpleAssign(tok, identifierExpr, e);
+            StmtTraverser.StmtBuilder.Add(cmd);
+            this.TranslatedExpressions.Push(e); // value of assignment might be needed for an enclosing expression
             return;
           }
         }
