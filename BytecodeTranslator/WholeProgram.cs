@@ -135,6 +135,7 @@ namespace BytecodeTranslator {
               this.subTypes[tr] = new List<ITypeReference>();
             }
             this.subTypes[tr].Add(typeDefinition);
+            TraverseChildren(tr.ResolvedType);
           }
 
           foreach (var iface in typeDefinition.Interfaces) {
@@ -143,6 +144,7 @@ namespace BytecodeTranslator {
               this.subTypes[tr] = new List<ITypeReference>();
             }
             this.subTypes[tr].Add(typeDefinition);
+            TraverseChildren(tr.ResolvedType);
           }
           base.TraverseChildren(typeDefinition);
         }
