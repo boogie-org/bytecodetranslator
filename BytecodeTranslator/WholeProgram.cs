@@ -146,7 +146,6 @@ namespace BytecodeTranslator {
             this.subTypes[tr].Add(typeDefinition);
             TraverseChildren(tr.ResolvedType);
           }
-          base.TraverseChildren(typeDefinition);
         }
       }
 
