@@ -122,12 +122,16 @@ namespace BytecodeTranslator {
       class RecordSubtypes : MetadataTraverser {
 
         Dictionary<ITypeReference, List<ITypeReference>> subTypes;
+        HashSet<uint> visitedTypes;
 
         public RecordSubtypes(Dictionary<ITypeReference, List<ITypeReference>> subTypes) {
           this.subTypes = subTypes;
+          this.visitedTypes = new HashSet<uint>();
         }
 
         public override void TraverseChildren(ITypeDefinition typeDefinition) {
+          if (this.visitedTypes.Contains(typeDefinition.InternedKey)) return;
+          this.visitedTypes.Add(typeDefinition.InternedKey);
           ITypeReference tr;
           foreach (var baseClass in typeDefinition.BaseClasses) {
             tr = TypeHelper.UninstantiateAndUnspecialize(baseClass);
@@ -146,6 +150,7 @@ namespace BytecodeTranslator {
             this.subTypes[tr].Add(typeDefinition);
             TraverseChildren(tr.ResolvedType);
           }
+          base.Traverse(typeDefinition.NestedTypes);
         }
       }
 
