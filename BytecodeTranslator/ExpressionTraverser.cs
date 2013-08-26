@@ -641,11 +641,9 @@ namespace BytecodeTranslator
               this.Traverse(delegateArgument);
               var del = this.TranslatedExpressions.Pop();
 
-              //var boundVar = this.sink.CreateFreshLocal(this.sink.host.PlatformType.SystemBoolean);
-              var boundVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, "i", Bpl.Type.Bool));
+              var boundVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, TranslationHelper.GenerateTempVarName(), Bpl.Type.Int));
 
-              //var resultVar = this.sink.CreateFreshLocal(this.sink.host.PlatformType.SystemBoolean);
-              var resultVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, "r", Bpl.Type.Bool));
+              var resultVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, TranslationHelper.GenerateTempVarName(), Bpl.Type.Bool));
 
               var delegateType = delegateArgument.Type;
               var invokeMethod = delegateType.ResolvedType.GetMembersNamed(this.sink.host.NameTable.GetNameFor("Invoke"), false).First() as IMethodReference;
@@ -653,7 +651,8 @@ namespace BytecodeTranslator
               var invokeProcedureInfo = sink.FindOrCreateProcedure(unspecializedInvokeMethod);
               var ins = new Bpl.ExprSeq();
               ins.Add(del);
-              ins.Add(Bpl.Expr.Ident(boundVar));
+              var secondArg = sink.Heap.ToUnion(Bpl.Token.NoToken, Bpl.Type.Int, Bpl.Expr.Ident(boundVar), false, this.StmtTraverser.StmtBuilder);
+              ins.Add(secondArg);
               var outs = new Bpl.IdentifierExprSeq();
               outs.Add(Bpl.Expr.Ident(resultVar));
 
