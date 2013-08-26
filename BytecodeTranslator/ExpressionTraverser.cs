@@ -651,18 +651,23 @@ namespace BytecodeTranslator
               var invokeProcedureInfo = sink.FindOrCreateProcedure(unspecializedInvokeMethod);
               var ins = new Bpl.ExprSeq();
               ins.Add(del);
-              var secondArg = sink.Heap.ToUnion(Bpl.Token.NoToken, Bpl.Type.Int, Bpl.Expr.Ident(boundVar), false, this.StmtTraverser.StmtBuilder);
+              var localStmtTraverser = this.StmtTraverser.factory.MakeStatementTraverser(this.sink, this.StmtTraverser.PdbReader, this.contractContext);
+
+              var secondArg = new Bpl.NAryExpr(noToken, new Bpl.FunctionCall(this.sink.Heap.Int2Union), new Bpl.ExprSeq(Bpl.Expr.Ident(boundVar)));
               ins.Add(secondArg);
               var outs = new Bpl.IdentifierExprSeq();
               outs.Add(Bpl.Expr.Ident(resultVar));
 
               var callCmd = new Bpl.CallCmd(noToken, invokeProcedureInfo.Decl.Name, ins, outs);
-
-
-              Bpl.Expr body = Bpl.Expr.True;
-              Bpl.Block block = new Bpl.Block(noToken, "A", new Bpl.CmdSeq(callCmd), new Bpl.ReturnExprCmd(noToken, Bpl.Expr.Ident(resultVar)));
-              var e = new Bpl.CodeExpr(new Bpl.VariableSeq(resultVar), new List<Bpl.Block>{block});
-              body = e;
+              var blockCmds = new Bpl.CmdSeq();
+              blockCmds.Add(
+                new Bpl.AssumeCmd(noToken,
+                Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
+                                new Bpl.NAryExpr(noToken, new Bpl.FunctionCall(this.sink.Heap.Union2Int), new Bpl.ExprSeq(secondArg)),
+                                Bpl.Expr.Ident(boundVar))));
+              blockCmds.Add(callCmd);
+              Bpl.Block block = new Bpl.Block(noToken, "A", blockCmds, new Bpl.ReturnExprCmd(noToken, Bpl.Expr.Ident(resultVar)));
+              Bpl.Expr body = new Bpl.CodeExpr(new Bpl.VariableSeq(resultVar), new List<Bpl.Block>{block});
 
 
               Bpl.Expr antecedent = Bpl.Expr.And(Bpl.Expr.Le(lb, Bpl.Expr.Ident(boundVar)), Bpl.Expr.Lt(Bpl.Expr.Ident(boundVar), ub));
