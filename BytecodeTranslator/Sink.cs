@@ -1374,7 +1374,9 @@ namespace BytecodeTranslator {
     public void AddDelegate(ITypeDefinition type, IMethodDefinition defn) {
       AddDelegateType(type);
       uint key = type.InternedKey;
-      FindOrCreateProcedure(defn);
+      var procInfo = FindOrCreateProcedure(defn);
+      var proc = procInfo.Decl;
+      proc.AddAttribute("inline", Bpl.Expr.Literal(1));
       delegateTypeToDelegates[key].Item2.Add(defn);
     }
 

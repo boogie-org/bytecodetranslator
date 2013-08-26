@@ -625,6 +625,63 @@ namespace BytecodeTranslator
         }
       }
 
+      // Handle calls to Contract.ForAll and Contract.Exists specially (if they are to the overloads that take two ints and a predicate on ints)
+      if (resolvedMethod.ContainingTypeDefinition.InternedKey == this.sink.host.PlatformType.SystemDiagnosticsContractsContract.InternedKey)
+      {
+          var methodName = resolvedMethod.Name.Value;
+          if (methodCall.Arguments.Count() == 3 && (methodName == "ForAll" || methodName == "Exists"))
+          {
+              var noToken = Bpl.Token.NoToken;
+
+              this.Traverse(methodCall.Arguments.ElementAt(0));
+              var lb = this.TranslatedExpressions.Pop();
+              this.Traverse(methodCall.Arguments.ElementAt(1));
+              var ub = this.TranslatedExpressions.Pop();
+              var delegateArgument = methodCall.Arguments.ElementAt(2);
+              this.Traverse(delegateArgument);
+              var del = this.TranslatedExpressions.Pop();
+
+              //var boundVar = this.sink.CreateFreshLocal(this.sink.host.PlatformType.SystemBoolean);
+              var boundVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, "i", Bpl.Type.Bool));
+
+              //var resultVar = this.sink.CreateFreshLocal(this.sink.host.PlatformType.SystemBoolean);
+              var resultVar = new Bpl.LocalVariable(noToken, new Bpl.TypedIdent(noToken, "r", Bpl.Type.Bool));
+
+              var delegateType = delegateArgument.Type;
+              var invokeMethod = delegateType.ResolvedType.GetMembersNamed(this.sink.host.NameTable.GetNameFor("Invoke"), false).First() as IMethodReference;
+              var unspecializedInvokeMethod = Sink.Unspecialize(invokeMethod).ResolvedMethod;
+              var invokeProcedureInfo = sink.FindOrCreateProcedure(unspecializedInvokeMethod);
+              var ins = new Bpl.ExprSeq();
+              ins.Add(del);
+              ins.Add(Bpl.Expr.Ident(boundVar));
+              var outs = new Bpl.IdentifierExprSeq();
+              outs.Add(Bpl.Expr.Ident(resultVar));
+
+              var callCmd = new Bpl.CallCmd(noToken, invokeProcedureInfo.Decl.Name, ins, outs);
+
+
+              Bpl.Expr body = Bpl.Expr.True;
+              Bpl.Block block = new Bpl.Block(noToken, "A", new Bpl.CmdSeq(callCmd), new Bpl.ReturnExprCmd(noToken, Bpl.Expr.Ident(resultVar)));
+              var e = new Bpl.CodeExpr(new Bpl.VariableSeq(resultVar), new List<Bpl.Block>{block});
+              body = e;
+
+
+              Bpl.Expr antecedent = Bpl.Expr.And(Bpl.Expr.Le(lb, Bpl.Expr.Ident(boundVar)), Bpl.Expr.Lt(Bpl.Expr.Ident(boundVar), ub));
+              body = Bpl.Expr.Imp(antecedent, body);
+
+              Bpl.Expr quantifier;
+              if (methodName == "ForAll")
+              {
+                  quantifier = new Bpl.ForallExpr(methodCallToken, new Bpl.VariableSeq(boundVar), body);
+              }
+              else
+              {
+                  quantifier = new Bpl.ExistsExpr(methodCallToken, new Bpl.VariableSeq(boundVar), body);
+              }
+              this.TranslatedExpressions.Push(quantifier);
+              return;
+          }
+      }
 
       List<Bpl.Expr> inexpr;
       List<Bpl.IdentifierExpr> outvars;

@@ -319,7 +319,7 @@ namespace BytecodeTranslator {
           Stream pdbStream = File.OpenRead(pdbFile);
           pdbReader = new PdbReader(pdbStream, host);
         }
-        var m2 = Decompiler.GetCodeModelFromMetadataModel(host, m, pdbReader) as IModule;
+        var m2 = Decompiler.GetCodeModelFromMetadataModel(host, m, pdbReader, DecompilerOptions.Unstack) as IModule;
         // The decompiler does not turn calls to Assert/Assume into Code Model nodes
         m2 = new Microsoft.Cci.MutableContracts.ContractExtractor.AssertAssumeExtractor(host, pdbReader).Rewrite(m2);
         decompiledModules.Add(m2);
@@ -345,7 +345,7 @@ namespace BytecodeTranslator {
             Stream pdbStream = File.OpenRead(pdbFile);
             pdbReader = new PdbReader(pdbStream, host);
           }
-          module = Decompiler.GetCodeModelFromMetadataModel(host, module, pdbReader) as IModule;
+          module = Decompiler.GetCodeModelFromMetadataModel(host, module, pdbReader, DecompilerOptions.Unstack) as IModule;
 
           var copier = new CodeDeepCopier(host);
           var mutableModule = copier.Copy(module);
@@ -868,7 +868,7 @@ namespace BytecodeTranslator {
         foreach (IMethodDefinition defn in delegates) {
           Bpl.Constant c = sink.FindOrCreateDelegateMethodConstant(defn);
           Sink.ProcedureInfo delegateProcedureInfo = sink.FindOrCreateProcedure(defn);
-          Bpl.Procedure delegateProcedure = (Bpl.Procedure) delegateProcedureInfo.Decl;
+          Bpl.Procedure delegateProcedure = (Bpl.Procedure)delegateProcedureInfo.Decl;
           Bpl.Formal thisVariable = delegateProcedureInfo.ThisVariable;
           int numArguments = defn.ParameterCount;
 
