@@ -671,15 +671,16 @@ namespace BytecodeTranslator
 
 
               Bpl.Expr antecedent = Bpl.Expr.And(Bpl.Expr.Le(lb, Bpl.Expr.Ident(boundVar)), Bpl.Expr.Lt(Bpl.Expr.Ident(boundVar), ub));
-              body = Bpl.Expr.Imp(antecedent, body);
 
               Bpl.Expr quantifier;
               if (methodName == "ForAll")
               {
+                  body = Bpl.Expr.Imp(antecedent, body);
                   quantifier = new Bpl.ForallExpr(methodCallToken, new Bpl.VariableSeq(boundVar), body);
               }
               else
               {
+                  body = Bpl.Expr.And(antecedent, body);
                   quantifier = new Bpl.ExistsExpr(methodCallToken, new Bpl.VariableSeq(boundVar), body);
               }
               this.TranslatedExpressions.Push(quantifier);
