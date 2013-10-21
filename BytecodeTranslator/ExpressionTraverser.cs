@@ -1065,7 +1065,7 @@ namespace BytecodeTranslator
         var e = this.TranslatedExpressions.Pop();
         var bplParam = Bpl.Expr.Ident(this.sink.FindParameterVariable(parameter, this.contractContext));
         if (structCopy) {
-          cmd = new Bpl.CallCmd(tok, proc.Name, new List<Bpl.Expr> { e, bplParam, }, new List<Bpl.IdentifierExpr>());
+          cmd = new Bpl.CallCmd(tok, proc.Name, new List<Bpl.Expr> { e, }, new List<Bpl.IdentifierExpr>{ bplParam });
         } else {
           cmd = Bpl.Cmd.SimpleAssign(tok, bplParam, e);
         }

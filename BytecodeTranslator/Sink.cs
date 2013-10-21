@@ -945,12 +945,16 @@ namespace BytecodeTranslator {
       IGenericTypeParameter gtp = type as IGenericTypeParameter;
       if (gtp != null) {
         if (codeContext) {
-          var funcCall = new Bpl.FunctionCall(this.FindOrDefineType(gtp.DefiningType).Selector(gtp));
-          var thisArg = new Bpl.IdentifierExpr(Bpl.Token.NoToken, this.ThisVariable);
-          var dynType = this.Heap.DynamicType(thisArg);
-          var nary = new Bpl.NAryExpr(Bpl.Token.NoToken, funcCall, new Bpl.ExprSeq(dynType));
-          return nary;
-
+            if (methodBeingTranslated.IsStatic) {
+              ProcedureInfo info = FindOrCreateProcedure(methodBeingTranslated);
+              return Bpl.Expr.Ident(info.TypeParameter(gtp.Index));
+            } else {
+              var funcCall = new Bpl.FunctionCall(this.FindOrDefineType(gtp.DefiningType).Selector(gtp));
+              var thisArg = new Bpl.IdentifierExpr(Bpl.Token.NoToken, this.ThisVariable);
+              var dynType = this.Heap.DynamicType(thisArg);
+              var nary = new Bpl.NAryExpr(Bpl.Token.NoToken, funcCall, new Bpl.ExprSeq(dynType));
+              return nary;
+            }
         } else {
           var formal = FindOrDefineTypeParameter(gtp);
           return Bpl.Expr.Ident(formal);
