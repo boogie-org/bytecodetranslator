@@ -662,14 +662,14 @@ namespace BytecodeTranslator {
       }
     }
 
-    private static void GenerateInAndOutExprs(Bpl.Expr e, Bpl.VariableSeq invars, Bpl.VariableSeq outvars, out Bpl.ExprSeq inExprs, out Bpl.IdentifierExprSeq outExprs) {
-      inExprs = new Bpl.ExprSeq();
+    private static void GenerateInAndOutExprs(Bpl.Expr e, List<Bpl.Variable> invars, List<Bpl.Variable> outvars, out List<Bpl.Expr> inExprs, out List<Bpl.IdentifierExpr> outExprs) {
+      inExprs = new List<Bpl.Expr>();
       inExprs.Add(e);
-      for (int i = 1; i < invars.Length; i++) {
+      for (int i = 1; i < invars.Count; i++) {
         Bpl.Variable f = invars[i];
         inExprs.Add(Bpl.Expr.Ident(f));
       }
-      outExprs = new Bpl.IdentifierExprSeq();
+      outExprs = new List<Bpl.IdentifierExpr>();
       foreach (Bpl.Formal f in outvars) {
         outExprs.Add(Bpl.Expr.Ident(f));
       } 
@@ -690,17 +690,17 @@ namespace BytecodeTranslator {
         Bpl.Procedure proc = new Bpl.Procedure(
             Bpl.Token.NoToken,
             sink.DelegateCreate(type),
-            new Bpl.TypeVariableSeq(),
-            new Bpl.VariableSeq(method, receiver, typeParameters),
-            new Bpl.VariableSeq(returnDelegate),
-            new Bpl.RequiresSeq(),
-            new Bpl.IdentifierExprSeq(),
-            new Bpl.EnsuresSeq());
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] {method, receiver, typeParameters}),
+            new List<Bpl.Variable>(new Bpl.Variable[] {returnDelegate}),
+            new List<Bpl.Requires>(),
+            new List<Bpl.IdentifierExpr>(),
+            new List<Bpl.Ensures>());
         proc.AddAttribute("inline", Bpl.Expr.Literal(1));
-        sink.TranslatedProgram.TopLevelDeclarations.Add(proc);
+        sink.TranslatedProgram.AddTopLevelDeclaration(proc);
 
         Bpl.StmtListBuilder stmtBuilder = new Bpl.StmtListBuilder();
-        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new Bpl.ExprSeq(), new Bpl.IdentifierExprSeq(returnDelegateExpr)));
+        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new List<Bpl.Expr>(), new List<Bpl.IdentifierExpr>(new Bpl.IdentifierExpr[] {returnDelegateExpr})));
         stmtBuilder.Add(new Bpl.AssumeCmd(Bpl.Token.NoToken, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, sink.ReadReceiver(methodExpr, returnDelegateExpr), receiverExpr)));
         stmtBuilder.Add(new Bpl.AssumeCmd(Bpl.Token.NoToken, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, sink.ReadTypeParameters(methodExpr, returnDelegateExpr), typeParametersExpr)));
         foreach (IMethodDefinition defn in delegates)
@@ -711,14 +711,14 @@ namespace BytecodeTranslator {
         Bpl.Implementation impl = new Bpl.Implementation(
             Bpl.Token.NoToken, 
             sink.DelegateCreate(type), 
-            new Bpl.TypeVariableSeq(), 
-            new Bpl.VariableSeq(method, receiver, typeParameters), 
-            new Bpl.VariableSeq(returnDelegate), 
-            new Bpl.VariableSeq(),         
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] { method, receiver, typeParameters }), 
+            new List<Bpl.Variable>(new Bpl.Variable[] {returnDelegate}), 
+            new List<Bpl.Variable>(),         
             stmtBuilder.Collect(Bpl.Token.NoToken));
         impl.AddAttribute("inline", Bpl.Expr.Literal(1));
         impl.Proc = proc;
-        sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+        sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     private static void CreateDelegateAddMethod(Sink sink, ITypeDefinition type, HashSet<IMethodDefinition> delegates)
@@ -734,17 +734,17 @@ namespace BytecodeTranslator {
         Bpl.Procedure proc = new Bpl.Procedure(
             Bpl.Token.NoToken,
             sink.DelegateAdd(type),
-            new Bpl.TypeVariableSeq(),
-            new Bpl.VariableSeq(a, b),
-            new Bpl.VariableSeq(c),
-            new Bpl.RequiresSeq(),
-            new Bpl.IdentifierExprSeq(),
-            new Bpl.EnsuresSeq());
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] {a, b}),
+            new List<Bpl.Variable>(new Bpl.Variable[] {c}),
+            new List<Bpl.Requires>(),
+            new List<Bpl.IdentifierExpr>(),
+            new List<Bpl.Ensures>());
         proc.AddAttribute("inline", Bpl.Expr.Literal(1));
-        sink.TranslatedProgram.TopLevelDeclarations.Add(proc);
+        sink.TranslatedProgram.AddTopLevelDeclaration(proc);
 
         Bpl.StmtListBuilder stmtBuilder = new Bpl.StmtListBuilder();
-        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new Bpl.ExprSeq(), new Bpl.IdentifierExprSeq(cExpr)));
+        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new List<Bpl.Expr>(), new List<Bpl.IdentifierExpr>(new Bpl.IdentifierExpr[] {cExpr})));
         foreach (IMethodDefinition defn in delegates)
         {
             Bpl.IdentifierExpr cie = new Bpl.IdentifierExpr(Bpl.Token.NoToken, sink.FindOrCreateDelegateMethodConstant(defn));
@@ -773,15 +773,15 @@ namespace BytecodeTranslator {
         Bpl.Implementation impl = new Bpl.Implementation(
             Bpl.Token.NoToken,
             sink.DelegateAdd(type),
-            new Bpl.TypeVariableSeq(),
-            new Bpl.VariableSeq(a, b),
-            new Bpl.VariableSeq(c),
-            new Bpl.VariableSeq(),
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] { a, b }),
+            new List<Bpl.Variable>(new Bpl.Variable[] {c}),
+            new List<Bpl.Variable>(),
             BuildStmtList(ifCmd)
             );
         impl.AddAttribute("inline", Bpl.Expr.Literal(1));
         impl.Proc = proc;
-        sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+        sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     private static void CreateDelegateRemoveMethod(Sink sink, ITypeDefinition type, HashSet<IMethodDefinition> delegates)
@@ -797,17 +797,17 @@ namespace BytecodeTranslator {
         Bpl.Procedure proc = new Bpl.Procedure(
             Bpl.Token.NoToken,
             sink.DelegateRemove(type),
-            new Bpl.TypeVariableSeq(),
-            new Bpl.VariableSeq(a, b),
-            new Bpl.VariableSeq(c),
-            new Bpl.RequiresSeq(),
-            new Bpl.IdentifierExprSeq(),
-            new Bpl.EnsuresSeq());
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] { a, b }),
+            new List<Bpl.Variable>(new Bpl.Variable[] {c}),
+            new List<Bpl.Requires>(),
+            new List<Bpl.IdentifierExpr>(),
+            new List<Bpl.Ensures>());
         proc.AddAttribute("inline", Bpl.Expr.Literal(1));
-        sink.TranslatedProgram.TopLevelDeclarations.Add(proc);
+        sink.TranslatedProgram.AddTopLevelDeclaration(proc);
 
         Bpl.StmtListBuilder stmtBuilder = new Bpl.StmtListBuilder();
-        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new Bpl.ExprSeq(), new Bpl.IdentifierExprSeq(cExpr)));
+        stmtBuilder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, "Alloc", new List<Bpl.Expr>(), new List<Bpl.IdentifierExpr>(new Bpl.IdentifierExpr[] {cExpr})));
         foreach (IMethodDefinition defn in delegates)
         {
             Bpl.IdentifierExpr cie = new Bpl.IdentifierExpr(Bpl.Token.NoToken, sink.FindOrCreateDelegateMethodConstant(defn));
@@ -823,15 +823,15 @@ namespace BytecodeTranslator {
         Bpl.Implementation impl = new Bpl.Implementation(
             Bpl.Token.NoToken,
             sink.DelegateRemove(type),
-            new Bpl.TypeVariableSeq(),
-            new Bpl.VariableSeq(a, b),
-            new Bpl.VariableSeq(c),
-            new Bpl.VariableSeq(),
+            new List<Bpl.TypeVariable>(),
+            new List<Bpl.Variable>(new Bpl.Variable[] { a, b }),
+            new List<Bpl.Variable>(new Bpl.Variable[] {c}),
+            new List<Bpl.Variable>(),
             BuildStmtList(ifCmd)
             );
         impl.AddAttribute("inline", Bpl.Expr.Literal(1));
         impl.Proc = proc;
-        sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+        sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     private static void CreateDispatchMethod(Sink sink, ITypeDefinition type, HashSet<IMethodDefinition> delegates) {
@@ -853,7 +853,7 @@ namespace BytecodeTranslator {
         Bpl.IToken token = invokeMethod.Token();
   
         List<Bpl.Variable> dispatchProcInExprs = new List<Bpl.Variable>();
-        for (int i = 1; i < invokeProcedure.InParams.Length; i++) {
+        for (int i = 1; i < invokeProcedure.InParams.Count; i++) {
           Bpl.Variable v = invokeProcedure.InParams[i];
           dispatchProcInExprs.Add(v);
         }
@@ -862,7 +862,7 @@ namespace BytecodeTranslator {
           dispatchProcOutExprs.Add(v);
         }
           
-        Bpl.VariableSeq localVariables = new Bpl.VariableSeq();
+        List<Bpl.Variable> localVariables = new List<Bpl.Variable>();
         Bpl.StmtListBuilder stmtBuilder = new Bpl.StmtListBuilder();
         int localCounter = 0;
         foreach (IMethodDefinition defn in delegates) {
@@ -883,7 +883,7 @@ namespace BytecodeTranslator {
             tempInputs.Add(localVariable);
           }
 
-          for (int i = 0; i < delegateProcedure.OutParams.Length; i++) {
+          for (int i = 0; i < delegateProcedure.OutParams.Count; i++) {
             Bpl.Variable v = delegateProcedure.OutParams[i];
             Bpl.LocalVariable localVariable = new Bpl.LocalVariable(Bpl.Token.NoToken,
               new Bpl.TypedIdent(Bpl.Token.NoToken, "local" + localCounter++, v.TypedIdent.Type));
@@ -891,8 +891,8 @@ namespace BytecodeTranslator {
             tempOutputs.Add(localVariable);
           }
 
-          Bpl.ExprSeq ins = new Bpl.ExprSeq();
-          Bpl.IdentifierExprSeq outs = new Bpl.IdentifierExprSeq();
+          List<Bpl.Expr> ins = new List<Bpl.Expr>();
+          List<Bpl.IdentifierExpr> outs = new List<Bpl.IdentifierExpr>();
           if (!defn.IsStatic)
               ins.Add(sink.ReadReceiver(Bpl.Expr.Ident(c), Bpl.Expr.Ident(delegateVariable)));
           for (int i = 0; i < tempInputs.Count; i++) {
@@ -902,7 +902,7 @@ namespace BytecodeTranslator {
             for (int i = 0; i < defn.GenericParameterCount; i++) {
               ins.Add(new Bpl.NAryExpr(Bpl.Token.NoToken,
                                        new Bpl.FunctionCall(sink.FindOrCreateTypeParameterFunction(i)),
-                                       new Bpl.ExprSeq(sink.ReadTypeParameters(Bpl.Expr.Ident(c), Bpl.Expr.Ident(delegateVariable)))));
+                                       new List<Bpl.Expr>(new Bpl.Expr[] {sink.ReadTypeParameters(Bpl.Expr.Ident(c), Bpl.Expr.Ident(delegateVariable))})));
             }
           }
           if (defn.IsStatic) {
@@ -910,7 +910,7 @@ namespace BytecodeTranslator {
             for (int i = 0; i < numTypeParameters; i++) {
               ins.Add(new Bpl.NAryExpr(Bpl.Token.NoToken,
                                        new Bpl.FunctionCall(sink.FindOrCreateTypeParameterFunction(i)),
-                                       new Bpl.ExprSeq(sink.ReadTypeParameters(Bpl.Expr.Ident(c), Bpl.Expr.Ident(delegateVariable)))));
+                                       new List<Bpl.Expr>(new Bpl.Expr[] {sink.ReadTypeParameters(Bpl.Expr.Ident(c), Bpl.Expr.Ident(delegateVariable))})));
             }
           }
           for (int i = 0; i < tempOutputs.Count; i++) {
@@ -935,7 +935,7 @@ namespace BytecodeTranslator {
         Bpl.Implementation dispatchImpl =
             new Bpl.Implementation(token,
                 invokeProcedure.Name,
-                new Bpl.TypeVariableSeq(),
+                new List<Bpl.TypeVariable>(),
                 invokeProcedure.InParams,
                 invokeProcedure.OutParams,
                 localVariables,
@@ -943,7 +943,7 @@ namespace BytecodeTranslator {
                 );
         dispatchImpl.Proc = invokeProcedure;
         dispatchImpl.AddAttribute("inline", Bpl.Expr.Literal(1));
-        sink.TranslatedProgram.TopLevelDeclarations.Add(dispatchImpl);
+        sink.TranslatedProgram.AddTopLevelDeclaration(dispatchImpl);
       } catch (TranslationException te) {
         throw new NotImplementedException(te.ToString());
       } catch {

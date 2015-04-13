@@ -88,15 +88,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Basetypes">
-      <HintPath>..\BoogieBinaries\Basetypes.dll</HintPath>
-    </Reference>
-    <Reference Include="Core">
-      <HintPath>..\BoogieBinaries\Core.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\BoogieBinaries\ParserHelper.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -145,6 +136,18 @@
     <Content Include="Readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\boogie\Source\Basetypes\Basetypes.csproj">
+      <Project>{43dfad18-3e35-4558-9be2-caff6b5ba8a0}</Project>
+      <Name>Basetypes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\boogie\Source\Core\Core.csproj">
+      <Project>{b230a69c-c466-4065-b9c1-84d80e76d802}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\boogie\Source\ParserHelper\ParserHelper.csproj">
+      <Project>{fcd3ac7f-9dfd-46c8-ab1e-09f0b0f16dc5}</Project>
+      <Name>ParserHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj">
       <Project>{60CD0C85-1E4A-4068-A4EC-D15B7981A908}</Project>
       <Name>ILGarbageCollect</Name>

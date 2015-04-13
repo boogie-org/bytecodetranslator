@@ -600,15 +600,15 @@ namespace BytecodeTranslator.Phone {
     }
 
     private void addMethodCalling(Bpl.Procedure proc, Bpl.Program program, Sink sink) {
-      Bpl.Procedure callingProc= new Bpl.Procedure(Bpl.Token.NoToken, "__BOOGIE_CALL_" + proc.Name, new Bpl.TypeVariableSeq(), new Bpl.VariableSeq(),
-                                                   new Bpl.VariableSeq(), new Bpl.RequiresSeq(), new Bpl.IdentifierExprSeq(), new Bpl.EnsuresSeq());
-      sink.TranslatedProgram.TopLevelDeclarations.Add(callingProc);
+      Bpl.Procedure callingProc= new Bpl.Procedure(Bpl.Token.NoToken, "__BOOGIE_CALL_" + proc.Name, new List<Bpl.TypeVariable>(), new List<Bpl.Variable>(),
+                                                   new List<Bpl.Variable>(), new List<Bpl.Requires>(), new List<Bpl.IdentifierExpr>(), new List<Bpl.Ensures>());
+      sink.TranslatedProgram.AddTopLevelDeclaration(callingProc);
 
       Bpl.StmtListBuilder codeBuilder = new Bpl.StmtListBuilder();
-      Bpl.VariableSeq localVars = new Bpl.VariableSeq(proc.InParams);
-      Bpl.IdentifierExprSeq identVars= new Bpl.IdentifierExprSeq();
+      List<Bpl.Variable> localVars = new List<Bpl.Variable>(proc.InParams);
+      List<Bpl.IdentifierExpr> identVars= new List<Bpl.IdentifierExpr>();
 
-      for (int i = 0; i < localVars.Length; i++) {
+      for (int i = 0; i < localVars.Count; i++) {
         identVars.Add(new Bpl.IdentifierExpr(Bpl.Token.NoToken, localVars[i]));
       }
       codeBuilder.Add(new Bpl.HavocCmd(Bpl.Token.NoToken, identVars));
@@ -622,15 +622,15 @@ namespace BytecodeTranslator.Phone {
         }
       }
 
-      Bpl.ExprSeq callParams = new Bpl.ExprSeq();
-      for (int i = 0; i < identVars.Length; i++) {
+      List<Bpl.Expr> callParams = new List<Bpl.Expr>();
+      for (int i = 0; i < identVars.Count; i++) {
         callParams.Add(identVars[i]);
       }
-      Bpl.CallCmd callCmd = new Bpl.CallCmd(Bpl.Token.NoToken, proc.Name, callParams, new Bpl.IdentifierExprSeq());
+      Bpl.CallCmd callCmd = new Bpl.CallCmd(Bpl.Token.NoToken, proc.Name, callParams, new List<Bpl.IdentifierExpr>());
       codeBuilder.Add(callCmd);
-      Bpl.Implementation impl = new Bpl.Implementation(Bpl.Token.NoToken, callingProc.Name, new Bpl.TypeVariableSeq(), new Bpl.VariableSeq(),
-                                                       new Bpl.VariableSeq(), localVars, codeBuilder.Collect(Bpl.Token.NoToken));
-      sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      Bpl.Implementation impl = new Bpl.Implementation(Bpl.Token.NoToken, callingProc.Name, new List<Bpl.TypeVariable>(), new List<Bpl.Variable>(),
+                                                       new List<Bpl.Variable>(), localVars, codeBuilder.Collect(Bpl.Token.NoToken));
+      sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     public bool isBackKeyPressOverride(IMethodDefinition method) {
@@ -693,9 +693,9 @@ namespace BytecodeTranslator.Phone {
       Sink.ProcedureInfo procInfo = sink.FindOrCreateProcedure(def);
       Sink.ProcedureInfo callerInfo = sink.FindOrCreateProcedure(callerDef);
 
-      Bpl.LocalVariable[] localVars = new Bpl.LocalVariable[procInfo.Decl.InParams.Length];
-      Bpl.IdentifierExpr[] varExpr = new Bpl.IdentifierExpr[procInfo.Decl.InParams.Length];
-      for (int i = 0; i < procInfo.Decl.InParams.Length; i++) {
+      Bpl.LocalVariable[] localVars = new Bpl.LocalVariable[procInfo.Decl.InParams.Count];
+      Bpl.IdentifierExpr[] varExpr = new Bpl.IdentifierExpr[procInfo.Decl.InParams.Count];
+      for (int i = 0; i < procInfo.Decl.InParams.Count; i++) {
         Bpl.LocalVariable loc = new Bpl.LocalVariable(Bpl.Token.NoToken,
                                                      new Bpl.TypedIdent(Bpl.Token.NoToken, TranslationHelper.GenerateTempVarName(),
                                                                         procInfo.Decl.InParams[i].TypedIdent.Type));
@@ -729,7 +729,7 @@ namespace BytecodeTranslator.Phone {
                             Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, new Bpl.IdentifierExpr(Bpl.Token.NoToken, boogieCurrentURI),
                                             new Bpl.IdentifierExpr(Bpl.Token.NoToken, boogieXamlConstant)));
       builder.Add(assumeStartPage);
-      builder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, procInfo.Decl.Name, new Bpl.ExprSeq(varExpr), new Bpl.IdentifierExprSeq()));
+      builder.Add(new Bpl.CallCmd(Bpl.Token.NoToken, procInfo.Decl.Name, new List<Bpl.Expr>(varExpr), new List<Bpl.IdentifierExpr>()));
       boogieXamlConstant = sink.FindOrCreateConstant(BOOGIE_ENDING_URI_PLACEHOLDER);
       Bpl.AssertCmd assertEndPage = new Bpl.AssertCmd(Bpl.Token.NoToken,
                             Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Neq, new Bpl.IdentifierExpr(Bpl.Token.NoToken, boogieCurrentURI),
@@ -742,10 +742,10 @@ namespace BytecodeTranslator.Phone {
 
       builder.Add(ifNavigated);
       Bpl.Implementation impl =
-        new Bpl.Implementation(Bpl.Token.NoToken, callerInfo.Decl.Name, new Bpl.TypeVariableSeq(), new Bpl.VariableSeq(),
-                               new Bpl.VariableSeq(), new Bpl.VariableSeq(localVars), builder.Collect(Bpl.Token.NoToken), null, new Bpl.Errors());
+        new Bpl.Implementation(Bpl.Token.NoToken, callerInfo.Decl.Name, new List<Bpl.TypeVariable>(), new List<Bpl.Variable>(),
+                               new List<Bpl.Variable>(), new List<Bpl.Variable>(localVars), builder.Collect(Bpl.Token.NoToken), null, new Bpl.Errors());
 
-      sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      sink.TranslatedProgram.AddTopLevelDeclaration(impl);
       return impl.Proc;
     }
 
@@ -764,13 +764,13 @@ namespace BytecodeTranslator.Phone {
       Bpl.StmtListBuilder builder= new Bpl.StmtListBuilder();
       Bpl.HavocCmd havoc=
         new Bpl.HavocCmd(Bpl.Token.NoToken,
-                         new Bpl.IdentifierExprSeq(new Bpl.IdentifierExprSeq(new Bpl.IdentifierExpr(Bpl.Token.NoToken,
-                                                                             sink.FindOrCreateFieldVariable(PhoneCodeHelper.CurrentURIFieldDefinition)))));
+                         new List<Bpl.IdentifierExpr>(new List<Bpl.IdentifierExpr>(new Bpl.IdentifierExpr[] {
+                                                                                   new Bpl.IdentifierExpr(Bpl.Token.NoToken, sink.FindOrCreateFieldVariable(PhoneCodeHelper.CurrentURIFieldDefinition))})));
       builder.Add(havoc);
-      Bpl.Implementation impl = new Bpl.Implementation(Bpl.Token.NoToken, procInfo.Decl.Name, new Bpl.TypeVariableSeq(),
-                                                       new Bpl.VariableSeq(), new Bpl.VariableSeq(), new Bpl.VariableSeq(),
+      Bpl.Implementation impl = new Bpl.Implementation(Bpl.Token.NoToken, procInfo.Decl.Name, new List<Bpl.TypeVariable>(),
+                                                       new List<Bpl.Variable>(), new List<Bpl.Variable>(), new List<Bpl.Variable>(),
                                                        builder.Collect(Bpl.Token.NoToken));
-      sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      sink.TranslatedProgram.AddTopLevelDeclaration(impl);
 
     }
 

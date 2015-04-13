@@ -43,9 +43,9 @@ namespace BytecodeTranslator {
       string prelude = this.InitialPreludeText + this.CommonText;
       var b = RepresentationFor.ParsePrelude(prelude, this, out program);
       if (b) {
-        this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
-        this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());
-        this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new Bpl.TypeSeq());
+        this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new List<Bpl.Type>());
+        this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new List<Bpl.Type>());
+        this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new List<Bpl.Type>());
       } 
       return b;
     }
@@ -67,7 +67,7 @@ namespace BytecodeTranslator {
         v = new Bpl.GlobalVariable(tok, tident);
       }
       else {
-        Bpl.Type mt = new Bpl.MapType(tok, new Bpl.TypeVariableSeq(), new Bpl.TypeSeq(this.RefType), t);
+        Bpl.Type mt = new Bpl.MapType(tok, new List<Bpl.TypeVariable>(), new List<Bpl.Type>(new Bpl.Type[] {this.RefType}), t);
         Bpl.TypedIdent tident = new Bpl.TypedIdent(tok, fieldname, mt);
         v = new Bpl.GlobalVariable(tok, tident);
       }
@@ -90,7 +90,7 @@ namespace BytecodeTranslator {
         v = new Bpl.GlobalVariable(tok, tident);
       }
       else {
-        Bpl.Type mt = new Bpl.MapType(tok, new Bpl.TypeVariableSeq(), new Bpl.TypeSeq(this.RefType), t);
+        Bpl.Type mt = new Bpl.MapType(tok, new List<Bpl.TypeVariable>(), new List<Bpl.Type>(new Bpl.Type[] {this.RefType}), t);
         Bpl.TypedIdent tident = new Bpl.TypedIdent(tok, fieldName, mt);
         v = new Bpl.GlobalVariable(tok, tident);
       }
@@ -171,9 +171,9 @@ namespace BytecodeTranslator {
       string prelude = this.InitialPreludeText + this.CommonText;
       var b = RepresentationFor.ParsePrelude(prelude, this, out program);
       if (b) {
-        this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new Bpl.TypeSeq());
-        this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new Bpl.TypeSeq());
-        this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new Bpl.TypeSeq());
+        this.FieldType = new Bpl.CtorType(this.FieldTypeDecl.tok, this.FieldTypeDecl, new List<Bpl.Type>());
+        this.RefType = new Bpl.CtorType(this.RefTypeDecl.tok, this.RefTypeDecl, new List<Bpl.Type>());
+        this.RealType = new Bpl.CtorType(this.RealTypeDecl.tok, this.RealTypeDecl, new List<Bpl.Type>());
       }
       return b;
     }
@@ -233,7 +233,7 @@ namespace BytecodeTranslator {
 
       Bpl.NAryExpr callRead;
       if (accessType == AccessType.Struct || accessType == AccessType.Heap)
-        callRead = new Bpl.NAryExpr(f.tok, new Bpl.FunctionCall(this.Read), new Bpl.ExprSeq(new Bpl.IdentifierExpr(f.tok, this.HeapVariable), o, f));
+        callRead = new Bpl.NAryExpr(f.tok, new Bpl.FunctionCall(this.Read), new List<Bpl.Expr>(new Bpl.Expr[] {new Bpl.IdentifierExpr(f.tok, this.HeapVariable), o, f}));
       else
         callRead = Bpl.Expr.Select(Bpl.Expr.Select(Bpl.Expr.Ident(ArrayContentsVariable), o), f);
 
@@ -255,7 +255,7 @@ namespace BytecodeTranslator {
 
       if (accessType == AccessType.Struct || accessType == AccessType.Heap) {
         h = Bpl.Expr.Ident(HeapVariable);
-        callWrite = new Bpl.NAryExpr(f.tok, new Bpl.FunctionCall(this.Write), new Bpl.ExprSeq(h, o, f, callConversion));
+        callWrite = new Bpl.NAryExpr(f.tok, new Bpl.FunctionCall(this.Write), new List<Bpl.Expr>(new Bpl.Expr[] {h, o, f, callConversion}));
       }
       else {
         h = Bpl.Expr.Ident(ArrayContentsVariable);

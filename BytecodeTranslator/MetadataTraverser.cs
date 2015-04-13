@@ -242,12 +242,12 @@ namespace BytecodeTranslator {
       foreach (Bpl.Variable v in this.sink.LocalVarMap.Values) {
         vars.Add(v);
       }
-      Bpl.VariableSeq vseq = new Bpl.VariableSeq(vars.ToArray());
+      List<Bpl.Variable> vseq = new List<Bpl.Variable>(vars.ToArray());
 
       Bpl.Implementation impl =
         new Bpl.Implementation(Bpl.Token.NoToken,
         proc.Name,
-        new Bpl.TypeVariableSeq(),
+        new List<Bpl.TypeVariable>(),
         proc.InParams,
         proc.OutParams,
         vseq,
@@ -257,7 +257,7 @@ namespace BytecodeTranslator {
         );
 
       impl.Proc = (Bpl.Procedure) proc; // TODO: get rid of cast
-      this.sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      this.sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     private void CreateStructCopyConstructor(ITypeDefinition typeDefinition) {
@@ -272,11 +272,11 @@ namespace BytecodeTranslator {
       var o = Bpl.Expr.Ident(proc.OutParams[0]);
 
       // other := Alloc();
-      stmtBuilder.Add(new Bpl.CallCmd(tok, this.sink.AllocationMethodName, new Bpl.ExprSeq(), new Bpl.IdentifierExprSeq(o)));
+      stmtBuilder.Add(new Bpl.CallCmd(tok, this.sink.AllocationMethodName, new List<Bpl.Expr>(), new List<Bpl.IdentifierExpr>(new Bpl.IdentifierExpr[] {o})));
       // assume DynamicType(other) == DynamicType(this);
       stmtBuilder.Add(new Bpl.AssumeCmd(tok, Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, this.sink.Heap.DynamicType(o), this.sink.Heap.DynamicType(Bpl.Expr.Ident(proc.InParams[0])))));
 
-      var localVars = new Bpl.VariableSeq();
+      var localVars = new List<Bpl.Variable>();
 
       foreach (var f in typeDefinition.Fields) {
         if (f.IsStatic) continue;
@@ -308,7 +308,7 @@ namespace BytecodeTranslator {
       Bpl.Implementation impl =
         new Bpl.Implementation(Bpl.Token.NoToken,
         proc.Name,
-        new Bpl.TypeVariableSeq(),
+        new List<Bpl.TypeVariable>(),
         proc.InParams,
         proc.OutParams,
         localVars,
@@ -318,7 +318,7 @@ namespace BytecodeTranslator {
         );
 
       impl.Proc = (Bpl.Procedure)proc; // TODO: get rid of cast
-      this.sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      this.sink.TranslatedProgram.AddTopLevelDeclaration(impl);
     }
 
     private bool sawCctor = false;
@@ -328,15 +328,15 @@ namespace BytecodeTranslator {
       var typename = TypeHelper.GetTypeName(typeDefinition, Microsoft.Cci.NameFormattingOptions.DocumentationId);
       typename = TranslationHelper.TurnStringIntoValidIdentifier(typename);
       var proc = new Bpl.Procedure(Bpl.Token.NoToken, typename + ".#cctor",
-          new Bpl.TypeVariableSeq(),
-          new Bpl.VariableSeq(), // in
-          new Bpl.VariableSeq(), // out
-          new Bpl.RequiresSeq(),
-          new Bpl.IdentifierExprSeq(), // modifies
-          new Bpl.EnsuresSeq()
+          new List<Bpl.TypeVariable>(),
+          new List<Bpl.Variable>(), // in
+          new List<Bpl.Variable>(), // out
+          new List<Bpl.Requires>(),
+          new List<Bpl.IdentifierExpr>(), // modifies
+          new List<Bpl.Ensures>()
           );
 
-      this.sink.TranslatedProgram.TopLevelDeclarations.Add(proc);
+      this.sink.TranslatedProgram.AddTopLevelDeclaration(proc);
 
       this.sink.BeginMethod(typeDefinition);
 
@@ -366,12 +366,12 @@ namespace BytecodeTranslator {
       foreach (Bpl.Variable v in this.sink.LocalVarMap.Values) {
         vars.Add(v);
       }
-      Bpl.VariableSeq vseq = new Bpl.VariableSeq(vars.ToArray());
+      List<Bpl.Variable> vseq = new List<Bpl.Variable>(vars.ToArray());
 
       Bpl.Implementation impl =
         new Bpl.Implementation(Bpl.Token.NoToken,
         proc.Name,
-        new Bpl.TypeVariableSeq(),
+        new List<Bpl.TypeVariable>(),
         proc.InParams,
         proc.OutParams,
         vseq,
@@ -379,7 +379,7 @@ namespace BytecodeTranslator {
         );
 
       impl.Proc = proc;
-      this.sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+      this.sink.TranslatedProgram.AddTopLevelDeclaration(impl);
 
     }
 
@@ -532,7 +532,7 @@ namespace BytecodeTranslator {
         if (0 <this.sink.Options.modelExceptions)
           vars.Add(procInfo.LocalExcVariable);
         vars.Add(procInfo.LabelVariable);
-        Bpl.VariableSeq vseq = new Bpl.VariableSeq(vars.ToArray());
+        List<Bpl.Variable> vseq = new List<Bpl.Variable>(vars.ToArray());
         #endregion
 
         var translatedBody = stmtTraverser.StmtBuilder.Collect(Bpl.Token.NoToken);
@@ -542,14 +542,14 @@ namespace BytecodeTranslator {
           Bpl.Implementation impl =
               new Bpl.Implementation(method.Token(),
                   decl.Name,
-                  new Microsoft.Boogie.TypeVariableSeq(),
+                  new List<Bpl.TypeVariable>(),
                   decl.InParams,
                   decl.OutParams,
                   vseq,
                   translatedBody);
 
           impl.Proc = proc;
-          this.sink.TranslatedProgram.TopLevelDeclarations.Add(impl);
+          this.sink.TranslatedProgram.AddTopLevelDeclaration(impl);
         } else { // method is translated as a function
           //var func = decl as Bpl.Function;
           //Contract.Assume(func != null);
@@ -564,7 +564,7 @@ namespace BytecodeTranslator {
           //  var b = new Bpl.Block(bb.tok, label, bb.simpleCmds, newTransferCmd);
           //  blocks.Add(b);
           //}
-          //var localVars = new Bpl.VariableSeq();
+          //var localVars = new List<Bpl.Variable>();
           //localVars.Add(returnValue);
           //func.Body = new Bpl.CodeExpr(localVars, blocks);
         }
@@ -672,9 +672,9 @@ namespace BytecodeTranslator {
     private void addPhoneTopLevelDeclarations() {
       if (PhoneCodeHelper.instance().PhoneNavigationToggled) {
         Bpl.Variable continueOnPageVar = sink.FindOrCreateGlobalVariable(PhoneCodeHelper.BOOGIE_CONTINUE_ON_PAGE_VARIABLE, Bpl.Type.Bool);
-        sink.TranslatedProgram.TopLevelDeclarations.Add(continueOnPageVar);
+        sink.TranslatedProgram.AddTopLevelDeclaration(continueOnPageVar);
         Bpl.Variable navigationCheckVar = sink.FindOrCreateGlobalVariable(PhoneCodeHelper.BOOGIE_NAVIGATION_CHECK_VARIABLE, Bpl.Type.Bool);
-        sink.TranslatedProgram.TopLevelDeclarations.Add(navigationCheckVar);
+        sink.TranslatedProgram.AddTopLevelDeclaration(navigationCheckVar);
       }
     }
 
