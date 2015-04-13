@@ -473,8 +473,7 @@ namespace BytecodeTranslator {
             var attrName = TypeHelper.GetTypeName(a.Type);
             if (attrName.EndsWith("Attribute"))
               attrName = attrName.Substring(0, attrName.Length - 9);
-            var args = new object[IteratorHelper.EnumerableCount(a.Arguments)];
-            int argIndex = 0;
+            var args = new List<object>();
             foreach (var c in a.Arguments) {
               var mdc = c as IMetadataConstant;
               if (mdc != null) {
@@ -500,10 +499,10 @@ namespace BytecodeTranslator {
                       throw new InvalidCastException("Invalid metadata constant type");
                   }
                 }
-                args[argIndex++] = o;
+                args.Add(o);
               }
             }
-            decl.AddAttribute(attrName, args);
+            decl.AddAttribute(attrName, args.ToArray());
           }
         } catch (InvalidCastException) {
           Console.WriteLine("Warning: Cannot translate custom attributes for method\n    '{0}':",
