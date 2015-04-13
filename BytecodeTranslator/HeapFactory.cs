@@ -173,29 +173,29 @@ namespace BytecodeTranslator {
         Bpl.Expr callConversion;
         if (boogieType == Bpl.Type.Bool)
         {
-            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Bool2Union), new Bpl.ExprSeq(expr));
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Bool2Union), new List<Bpl.Expr>(new Bpl.Expr[] {expr}));
             builder.Add(
                 new Bpl.AssumeCmd(tok,
                 Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Bool), new Bpl.ExprSeq(callConversion)),
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Bool), new List<Bpl.Expr>(new Bpl.Expr[] { callConversion })),
                                 expr)));
         }
         else if (boogieType == Bpl.Type.Int)
         {
-            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Int2Union), new Bpl.ExprSeq(expr));
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Int2Union), new List<Bpl.Expr>(new Bpl.Expr[] { expr }));
             builder.Add(
                 new Bpl.AssumeCmd(tok,
                 Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Int), new Bpl.ExprSeq(callConversion)),
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Int), new List<Bpl.Expr>(new Bpl.Expr[] {callConversion})),
                                 expr)));
         }
         else if (boogieType == RealType)
         {
-            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Real2Union), new Bpl.ExprSeq(expr));
+            callConversion = new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Real2Union), new List<Bpl.Expr>(new Bpl.Expr[] { expr }));
             builder.Add(
                 new Bpl.AssumeCmd(tok,
                 Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq,
-                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Real), new Bpl.ExprSeq(callConversion)),
+                                new Bpl.NAryExpr(tok, new Bpl.FunctionCall(this.Union2Real), new List<Bpl.Expr>(new Bpl.Expr[] { callConversion })),
                                 expr)));
         }
         else
@@ -222,7 +222,7 @@ namespace BytecodeTranslator {
       var callExpr = new Bpl.NAryExpr(
         tok,
         new Bpl.FunctionCall(conversion),
-        new Bpl.ExprSeq(expr)
+        new List<Bpl.Expr>(new Bpl.Expr[] {expr})
         );
       callExpr.Type = boogieType;
       return callExpr;
@@ -295,7 +295,7 @@ namespace BytecodeTranslator {
       string typename = TypeHelper.GetTypeName(type, NameFormattingOptions.DocumentationId);
       typename = TranslationHelper.TurnStringIntoValidIdentifier(typename);
       Bpl.IToken tok = type.Token();
-      Bpl.VariableSeq inputs = new Bpl.VariableSeq();
+      List<Bpl.Variable> inputs = new List<Bpl.Variable>();
       //for (int i = 0; i < parameterCount; i++) {
       //  inputs.Add(new Bpl.Formal(tok, new Bpl.TypedIdent(tok, "arg"+i, this.TypeType), true));
       //}
@@ -330,7 +330,7 @@ namespace BytecodeTranslator {
       var callDynamicType = new Bpl.NAryExpr(
         o.tok,
         new Bpl.FunctionCall(this.DynamicTypeFunction),
-        new Bpl.ExprSeq(o)
+        new List<Bpl.Expr>(new Bpl.Expr[] {o})
         );
       return callDynamicType;
     }
