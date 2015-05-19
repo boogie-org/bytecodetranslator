@@ -335,7 +335,7 @@ namespace BytecodeTranslator {
       return callDynamicType;
     }
 
-    [RepresentationFor("$As", "function $As(Ref, Type): Ref;")]
+    [RepresentationFor("$As", "function $As(a: Ref, b: Type): Ref { if $Subtype($DynamicType(a), b) then a else null }")]
     public Bpl.Function AsFunction = null;
 
     [RepresentationFor("$Subtype", "function $Subtype(Type, Type): bool;")]
