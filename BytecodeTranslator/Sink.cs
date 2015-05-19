@@ -1040,10 +1040,14 @@ namespace BytecodeTranslator {
         public Bpl.Function Constructor { get { return constructor; } }
         public Bpl.Constant ConstructorId { get { return constructorId; } }
         public Bpl.Function Selector(IGenericTypeParameter typeParameter) { return typeParameterToSelector[typeParameter.InternedKey]; }
+        public bool isExtern;
+        public ITypeDefinition type;
+
         public TypeInfo(Sink sink, ITypeDefinition type)
         {
-            bool isExtern = sink.assemblyBeingTranslated != null &&
+            isExtern = sink.assemblyBeingTranslated != null &&
                             !TypeHelper.GetDefiningUnitReference(type).UnitIdentity.Equals(sink.assemblyBeingTranslated.UnitIdentity);
+            this.type = type;
 
             typeParameterToSelector = new Dictionary<uint, Bpl.Function>();
             string typeName = TypeHelper.GetTypeName(type, NameFormattingOptions.DocumentationId);
@@ -1080,6 +1084,24 @@ namespace BytecodeTranslator {
                 constructorId.AddAttribute("extern");
             } 
             sink.TranslatedProgram.AddTopLevelDeclaration(constructorId);
+
+            // For external types, we should associate the type constructor with the ID
+            // TODO: do we need wholeProgram?
+            // TODO: what happens for generics?
+            if (isExtern && constructor.InParams.Count == 0 && sink.Options.wholeProgram)
+            { 
+                // axiom TypeConstructor(T$foo()) == T$foo;
+                sink.TranslatedProgram.AddTopLevelDeclaration(
+                    new Bpl.Axiom(Bpl.Token.NoToken, Bpl.Expr.Eq(
+                        new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(sink.Heap.TypeConstructorFunction), new List<Bpl.Expr>{
+                            new Bpl.NAryExpr(Bpl.Token.NoToken, new Bpl.FunctionCall(constructor), new List<Bpl.Expr>())}),
+                        Bpl.Expr.Ident(constructorId))));
+            }
+        }
+
+        public override string ToString()
+        {
+            return constructor.Name;
         }
     }
 
@@ -1109,7 +1131,6 @@ namespace BytecodeTranslator {
         }
     }
 
-
     /// <summary>
     /// Every type is represented as a function.
     /// Non-generic types are nullary functions.
@@ -1125,7 +1146,18 @@ namespace BytecodeTranslator {
       return typeInfo;
     }
 
-    private void DeclareParentsNew(ITypeDefinition typeDefinition, Bpl.Function typeDefinitionAsBplFunction) {
+    // TODO: Is this the right set of axioms for extern types?
+    public void DeclareExternTypeSubtyping()
+    {
+        // check-point set of extern types
+        var externtypes = declaredTypeFunctions.Values.Where(t => t.isExtern).ToList();
+        foreach (var tinfo in externtypes)
+        {
+            DeclareParentsNew(tinfo.type, tinfo.Constructor);
+        }
+    }
+
+    public void DeclareParentsNew(ITypeDefinition typeDefinition, Bpl.Function typeDefinitionAsBplFunction) {
       List<Bpl.Expr> superTypeExprs = new List<Bpl.Expr>();
       foreach (var p in typeDefinition.BaseClasses) {
         superTypeExprs.Add(FindOrCreateTypeReference(p));
@@ -1167,7 +1199,7 @@ namespace BytecodeTranslator {
       this.TranslatedProgram.AddTopLevelDeclaration(new Bpl.Axiom(Bpl.Token.NoToken, forall));
     }
 
-    private void DeclareParents(ITypeDefinition typeDefinition, Bpl.Function typeDefinitionAsBplFunction) {
+    public void DeclareParents(ITypeDefinition typeDefinition, Bpl.Function typeDefinitionAsBplFunction) {
       foreach (var p in typeDefinition.BaseClasses) {
         DeclareSuperType(typeDefinitionAsBplFunction, p);
       }

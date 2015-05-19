@@ -41,6 +41,9 @@ namespace BytecodeTranslator {
     [OptionDescription("Model exceptional control flow, (0: none, 1: explicit exceptions, 2: conservatively, default: 2)", ShortForm = "e")]
     public int modelExceptions = 2;
 
+    [OptionDescription("Model type information, (0: minimal, 1: Include Subtyping, default: 0)", ShortForm = "typeInfo")]
+    public int typeInfo = 0;
+
     [OptionDescription("Translation should be done for Get Me Here functionality, (default: false)", ShortForm = "gmh")]
     public bool getMeHere = false;
 
@@ -118,7 +121,7 @@ namespace BytecodeTranslator {
       }
 
       if (options.breakIntoDebugger) {
-        System.Diagnostics.Debugger.Break();
+        System.Diagnostics.Debugger.Launch();
       }
 
       #endregion
@@ -378,7 +381,7 @@ namespace BytecodeTranslator {
 
       // TODO move away, get all plugin and translators from a config file or alike
       #region Plugged translators
-      List<Translator> translatorsPlugged = new List<Translator>();      
+      List<Translator> translatorsPlugged = new List<Translator>();
       ITranslationPlugin bctPlugin= new BytecodeTranslatorPlugin(wholeProgram);
       Translator bcTranslator = bctPlugin.getTranslator(sink, contractExtractors, pdbReaders);
       translatorsPlugged.Add(bcTranslator);
@@ -451,6 +454,9 @@ namespace BytecodeTranslator {
         CreateDelegateAddMethod(sink, pair.Item1, pair.Item2);
         CreateDelegateRemoveMethod(sink, pair.Item1, pair.Item2);
       }
+
+      // Subtyping for extern types
+      if(sink.Options.typeInfo > 0) sink.DeclareExternTypeSubtyping();
 
       string outputFileName = primaryModule.Name + ".bpl";
       callPostTranslationTraversers(modules, sink, phoneControlsConfigFile, outputFileName);

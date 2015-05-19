@@ -128,12 +128,14 @@ namespace BytecodeTranslator {
       if (typeDefinition.IsClass) {
         bool savedSawCctor = this.sawCctor;
         this.sawCctor = false;
-        sink.FindOrDefineType(typeDefinition);
+        var tinfo = sink.FindOrDefineType(typeDefinition);
         base.TraverseChildren(typeDefinition);
         if (!this.sawCctor) {
           CreateStaticConstructor(typeDefinition);
         }
         this.sawCctor = savedSawCctor;
+        // Subtyping info
+        if(sink.Options.typeInfo > 0) sink.DeclareParentsNew(typeDefinition, tinfo.Constructor);
       } else if (typeDefinition.IsDelegate) {
         ITypeDefinition unspecializedType = Microsoft.Cci.MutableContracts.ContractHelper.Unspecialized(typeDefinition).ResolvedType;
         sink.AddDelegateType(unspecializedType);
