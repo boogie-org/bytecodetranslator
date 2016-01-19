@@ -2001,7 +2001,8 @@ namespace BytecodeTranslator
     {
       if ((equal.LeftOperand.Type.TypeCode != PrimitiveTypeCode.NotPrimitive || equal.RightOperand.Type.TypeCode != PrimitiveTypeCode.NotPrimitive)
         && !TypeHelper.TypesAreEquivalent(equal.LeftOperand.Type, equal.RightOperand.Type)
-        && (!(IsConstantNull(equal.LeftOperand) || IsConstantNull(equal.RightOperand))) // null is "polymorphic": it can be compared against any reference type.
+        && !(equal.LeftOperand.Type.TypeCode == PrimitiveTypeCode.Int32 || equal.RightOperand.Type.TypeCode == PrimitiveTypeCode.Int32)
+        && !(IsConstantNull(equal.LeftOperand) || IsConstantNull(equal.RightOperand)) // null is "polymorphic": it can be compared against any reference type.
         ) {
         throw new TranslationException(
           String.Format("Decompiler messed up: equality's left operand is of type '{0}' but right operand is of type '{1}'.",
@@ -2011,8 +2012,14 @@ namespace BytecodeTranslator
       }
 
       base.TraverseChildren(equal);
+
       Bpl.Expr rexp = TranslatedExpressions.Pop();
       Bpl.Expr lexp = TranslatedExpressions.Pop();
+      if (!TypeHelper.TypesAreEquivalent(equal.LeftOperand.Type, equal.RightOperand.Type))
+      {
+        rexp = TryParseToBool(rexp);
+        lexp = TryParseToBool(lexp);
+      }
       TranslatedExpressions.Push(Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Eq, lexp, rexp));
     }
 
@@ -2022,13 +2029,21 @@ namespace BytecodeTranslator
       return ctc.Value == null;
     }
 
+    private Bpl.Expr TryParseToBool(Bpl.Expr expr)
+    {
+      var lexp = expr as Bpl.LiteralExpr;
+      if (lexp != null && lexp.Type == Bpl.Type.Int) {
+        return new Bpl.LiteralExpr(lexp.tok, !((Microsoft.Basetypes.BigNum) lexp.Val).IsZero);
+      }
+      return expr;
+    }
+
     public override void TraverseChildren(INotEquality nonEqual)
     {
-
       if ((nonEqual.LeftOperand.Type.TypeCode != PrimitiveTypeCode.NotPrimitive || nonEqual.RightOperand.Type.TypeCode != PrimitiveTypeCode.NotPrimitive)
-        &&
-        !TypeHelper.TypesAreEquivalent(nonEqual.LeftOperand.Type, nonEqual.RightOperand.Type)
-        && (!(IsConstantNull(nonEqual.LeftOperand) || IsConstantNull(nonEqual.RightOperand))) // null is "polymorphic": it can be compared against any reference type.
+        && !TypeHelper.TypesAreEquivalent(nonEqual.LeftOperand.Type, nonEqual.RightOperand.Type)
+        && !(nonEqual.LeftOperand.Type.TypeCode == PrimitiveTypeCode.Int32 || nonEqual.RightOperand.Type.TypeCode == PrimitiveTypeCode.Int32)
+        && !(IsConstantNull(nonEqual.LeftOperand) || IsConstantNull(nonEqual.RightOperand)) // null is "polymorphic": it can be compared against any reference type.
         ) {
         throw new TranslationException(
           String.Format("Decompiler messed up: inequality's left operand is of type '{0}' but right operand is of type '{1}'.",
@@ -2036,10 +2051,17 @@ namespace BytecodeTranslator
           TypeHelper.GetTypeName(nonEqual.RightOperand.Type)
           ));
       }
-
+      
       base.TraverseChildren(nonEqual);
+      
       Bpl.Expr rexp = TranslatedExpressions.Pop();
       Bpl.Expr lexp = TranslatedExpressions.Pop();
+      if (!TypeHelper.TypesAreEquivalent(nonEqual.LeftOperand.Type, nonEqual.RightOperand.Type))
+      {
+        rexp = TryParseToBool(rexp);
+        lexp = TryParseToBool(lexp);
+      }
+      
       TranslatedExpressions.Push(Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Neq, lexp, rexp));
     }
 
