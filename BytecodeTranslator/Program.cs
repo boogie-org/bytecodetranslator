@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 using BytecodeTranslator.TranslationPlugins;
 using BytecodeTranslator.TranslationPlugins.BytecodeTranslator;
 using BytecodeTranslator.TranslationPlugins.PhoneTranslator;
+using System.Text;
 
 namespace BytecodeTranslator {
 
@@ -261,25 +262,19 @@ namespace BytecodeTranslator {
       return 0;
     }
 
-    public static int TranslateAssemblyAndWriteOutput(List<string> assemblyNames, HeapFactory heapFactory, Options options, List<Regex> exemptionList, bool whiteList) {
+    public static string TranslateAssemblyAndReturnOutput(List<string> assemblyNames, HeapFactory heapFactory, Options options, List<Regex> exemptionList, bool whiteList) {
       Contract.Requires(assemblyNames != null);
       Contract.Requires(heapFactory != null);
-      try {
-        var pgm = TranslateAssembly(assemblyNames, heapFactory, options, exemptionList, whiteList);
-        var fileName = assemblyNames[0];
-        fileName = Path.GetFileNameWithoutExtension(fileName);
-        string outputFileName = fileName + ".bpl";
-        using (var writer = new Microsoft.Boogie.TokenTextWriter(outputFileName)) {
-          Prelude.Emit(writer);
-          pgm.Emit(writer);
-          writer.Close();
-        }
-        return 0; // success
-      } catch (Exception e) { // swallow everything and just return an error code
-        Console.WriteLine("The byte-code translator failed: {0}", e.Message);
-        // Console.WriteLine("Stack trace: {0}", e.StackTrace);
-        return -1;
+      var pgm = TranslateAssembly(assemblyNames, heapFactory, options, exemptionList, whiteList);
+      var fileName = assemblyNames[0];
+      fileName = Path.GetFileNameWithoutExtension(fileName);
+      string outputFileName = fileName + ".bpl";
+      var sb = new StringBuilder();
+      using (var writer = new Microsoft.Boogie.TokenTextWriter(outputFileName, new StringWriter(sb), false)) {
+        Prelude.Emit(writer);
+        pgm.Emit(writer);
       }
+      return sb.ToString();
     }
 
     public static Bpl.Program/*?*/ TranslateAssembly(List<string> assemblyNames, HeapFactory heapFactory, Options options, List<Regex> exemptionList, bool whiteList) {

@@ -38,6 +38,9 @@ namespace TranslationTest {
       }
     }
 
+    private string InputAssemblyPath =>
+      typeof(RegressionTestInput.Class0).Assembly.Location;
+
     #region Additional test attributes
     //
     // You can use the following additional attributes as you write your tests:
@@ -64,42 +67,33 @@ namespace TranslationTest {
       var options = new Options();
       options.monotonicHeap = true;
       options.dereference = Options.Dereference.Assume;
-      BCT.TranslateAssemblyAndWriteOutput(new List<string> { assemblyName }, heapFactory, options, null, false);
-      var fileName = Path.ChangeExtension(assemblyName, "bpl");
-      var s = File.ReadAllText(fileName);
-      return s;
+      return BCT.TranslateAssemblyAndReturnOutput(new List<string> { assemblyName }, heapFactory, options, null, false);
+    }
+
+    private void ComparisonTest(string name, Heap heap)
+    {
+      Stream resource = typeof(UnitTest0).Assembly.GetManifestResourceStream(
+        "TranslationTest." + name + "Input.txt");
+      StreamReader reader = new StreamReader(resource);
+      string expected = reader.ReadToEnd();
+      var result = ExecuteTest(InputAssemblyPath, new SplitFieldsHeap());
+      if (result != expected)
+      {
+        string resultFile = Path.Combine(TestContext.DeploymentDirectory, name + "Output.txt");
+        File.WriteAllText(resultFile, result);
+        var msg = String.Format("Output didn't match: {0}Input.txt \"{1}\"", name, resultFile);
+        Assert.Fail(msg);
+      }
     }
 
     [TestMethod]
     public void SplitFieldsHeap() {
-      string dir = TestContext.DeploymentDirectory;
-      var fullPath = Path.Combine(dir, "RegressionTestInput.dll");
-      Stream resource = typeof(UnitTest0).Assembly.GetManifestResourceStream("TranslationTest.SplitFieldsHeapInput.txt");
-      StreamReader reader = new StreamReader(resource);
-      string expected = reader.ReadToEnd();
-      var result = ExecuteTest(fullPath, new SplitFieldsHeap());
-      if (result != expected) {
-        string resultFile = Path.GetFullPath("SplitFieldsHeapOutput.txt");
-        File.WriteAllText(resultFile, result);
-        var msg = String.Format("Output didn't match: SplitFieldsHeapInput.txt \"{0}\"", resultFile);
-        Assert.Fail(msg);
-      }
+      ComparisonTest("SplitFieldsHeap", new SplitFieldsHeap());
     }
 
     [TestMethod]
     public void GeneralHeap() {
-      string dir = TestContext.DeploymentDirectory;
-      var fullPath = Path.Combine(dir, "RegressionTestInput.dll");
-      Stream resource = typeof(UnitTest0).Assembly.GetManifestResourceStream("TranslationTest.GeneralHeapInput.txt");
-      StreamReader reader = new StreamReader(resource);
-      string expected = reader.ReadToEnd();
-      var result = ExecuteTest(fullPath, new GeneralHeap());
-      if (result != expected) {
-        string resultFile = Path.GetFullPath("GeneralHeapOutput.txt");
-        File.WriteAllText(resultFile, result);
-        var msg = String.Format("Output didn't match: GeneralHeapInput.txt \"{0}\"", resultFile);
-        Assert.Fail(msg);
-      }
+      ComparisonTest("GeneralHeap", new GeneralHeap());
     }
 
   }
