@@ -1076,16 +1076,19 @@ namespace BytecodeTranslator
 
       var/*?*/ field = container as IFieldReference;
       if (field != null) {
-        this.Traverse(source);
-        var e = this.TranslatedExpressions.Pop();
         var f = Bpl.Expr.Ident(this.sink.FindOrCreateFieldVariable(field));
         if (instance == null) {
+          this.Traverse(source);
+          var e = this.TranslatedExpressions.Pop();
           // static fields are not kept in the heap
           StmtTraverser.StmtBuilder.Add(Bpl.Cmd.SimpleAssign(tok, f, e));
         }
         else {
           this.Traverse(instance);
           var x = this.TranslatedExpressions.Pop();
+          // The source must be evaluated after the instance.
+          this.Traverse(source);
+          var e = this.TranslatedExpressions.Pop();
           var boogieType = sink.CciTypeToBoogie(field.Type);
           this.sink.Heap.WriteHeap(tok, x, f, e,
             field.ResolvedField.ContainingType.ResolvedType.IsStruct ? AccessType.Struct : AccessType.Heap,
