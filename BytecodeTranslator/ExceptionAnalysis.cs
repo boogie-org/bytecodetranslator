@@ -18,7 +18,6 @@ using Microsoft.Cci.ILToCodeModel;
 using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 using TranslationPlugins;
-using BytecodeTranslator.Phone;
 
 
 namespace BytecodeTranslator {

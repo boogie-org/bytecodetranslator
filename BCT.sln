@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BytecodeTranslator", "BytecodeTranslator\BytecodeTranslator.csproj", "{9C8E4D74-0251-479D-ADAC-A9A469977301}"
 EndProject
@@ -27,11 +27,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractExtractor", "..\CCICodePlex\Ast\Sources\ContractExtractor\ContractExtractor.csproj", "{0703D916-A881-45E6-A5CD-6BC50E2E30E2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlAndDataFlowGraph", "..\CCICodePlex\Ast\Metadata\Sources\ControlAndDataFlowGraph\ControlAndDataFlowGraph.csproj", "{2596EFB0-87AE-42CE-89EB-84F35D6350D2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGarbageCollect", "..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj", "{60CD0C85-1E4A-4068-A4EC-D15B7981A908}"
-	ProjectSection(ProjectDependencies) = postProject
-		{6D83F687-ABB5-40B3-915E-CA53DA0EB7F3} = {6D83F687-ABB5-40B3-915E-CA53DA0EB7F3}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGenerator", "..\CCICodePlex\Ast\Metadata\Sources\ILGenerator\ILGenerator.csproj", "{08156C78-403A-4112-AD81-8646AC51CD2F}"
 EndProject
@@ -459,51 +454,6 @@ Global
 		{2596EFB0-87AE-42CE-89EB-84F35D6350D2}.z3apidebug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{2596EFB0-87AE-42CE-89EB-84F35D6350D2}.z3apidebug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{2596EFB0-87AE-42CE-89EB-84F35D6350D2}.z3apidebug|x86.ActiveCfg = Debug|Any CPU
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Checked|Any CPU.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Checked|Mixed Platforms.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Checked|Mixed Platforms.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Checked|x86.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Checked|x86.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.CompilerOnly|Any CPU.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.CompilerOnly|Mixed Platforms.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.CompilerOnly|Mixed Platforms.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.CompilerOnly|x86.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.CompilerOnly|x86.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Debug|x86.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Debug|x86.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.FastpathSim|Any CPU.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.FastpathSim|Mixed Platforms.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.FastpathSim|Mixed Platforms.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.FastpathSim|x86.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.FastpathSim|x86.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyDebug|Any CPU.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyDebug|Mixed Platforms.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyDebug|Mixed Platforms.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyDebug|x86.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyDebug|x86.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyRelease|Any CPU.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyRelease|Mixed Platforms.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyRelease|Mixed Platforms.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyRelease|x86.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.NightlyRelease|x86.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.QED|Any CPU.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.QED|Mixed Platforms.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.QED|Mixed Platforms.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.QED|x86.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.QED|x86.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Release|Any CPU.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Release|Mixed Platforms.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Release|x86.ActiveCfg = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.Release|x86.Build.0 = Release|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.z3apidebug|Any CPU.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.z3apidebug|Mixed Platforms.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.z3apidebug|Mixed Platforms.Build.0 = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.z3apidebug|x86.ActiveCfg = Debug|x86
-		{60CD0C85-1E4A-4068-A4EC-D15B7981A908}.z3apidebug|x86.Build.0 = Debug|x86
 		{08156C78-403A-4112-AD81-8646AC51CD2F}.Checked|Any CPU.ActiveCfg = CompilerOnly|Any CPU
 		{08156C78-403A-4112-AD81-8646AC51CD2F}.Checked|Any CPU.Build.0 = CompilerOnly|Any CPU
 		{08156C78-403A-4112-AD81-8646AC51CD2F}.Checked|Mixed Platforms.ActiveCfg = CompilerOnly|Any CPU

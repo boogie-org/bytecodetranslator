@@ -103,18 +103,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExceptionAnalysis.cs" />
-    <Compile Include="TranslationPlugins\PhoneTranslator\PhoneFeedbackPlugin.cs" />
     <Compile Include="TranslationPlugins\Translators\BaseTranslator.cs" />
     <Compile Include="CLRSemantics.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="HeapFactory.cs" />
     <Compile Include="MetadataTraverser.cs" />
-    <Compile Include="Phone\PhoneBackKeyCallbackTraverser.cs" />
-    <Compile Include="Phone\PhoneCodeHelper.cs" />
-    <Compile Include="Phone\PhoneControlFeedbackTraverser.cs" />
-    <Compile Include="Phone\PhoneInitializationTraverser.cs" />
-    <Compile Include="Phone\PhoneMethodInliningTraverser.cs" />
-    <Compile Include="Phone\PhoneNavigationTraverser.cs" />
     <Compile Include="Prelude.cs" />
     <Compile Include="ExpressionTraverser.cs" />
     <Compile Include="Sink.cs" />
@@ -125,10 +118,7 @@
     <Compile Include="TranslationPlugins\BytecodeTranslator\BytecodeTranslatorPlugin.cs" />
     <Compile Include="TranslationPlugins\ContractAwareTranslator.cs" />
     <Compile Include="TranslationPlugins\ITranslationPlugin.cs" />
-    <Compile Include="TranslationPlugins\PhoneTranslator\PhoneInitializationPlugin.cs" />
     <Compile Include="TranslationPlugins\Translator.cs" />
-    <Compile Include="TranslationPlugins\Translators\PhoneFeedbackTranslator.cs" />
-    <Compile Include="TranslationPlugins\Translators\PhoneInitializationTranslator.cs" />
     <Compile Include="TraverserFactory.cs" />
     <Compile Include="WholeProgram.cs" />
   </ItemGroup>
@@ -147,10 +137,6 @@
     <ProjectReference Include="..\..\boogie\Source\ParserHelper\ParserHelper.csproj">
       <Project>{fcd3ac7f-9dfd-46c8-ab1e-09f0b0f16dc5}</Project>
       <Name>ParserHelper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Samples\ILGarbageCollect\ILGarbageCollect.csproj">
-      <Project>{60CD0C85-1E4A-4068-A4EC-D15B7981A908}</Project>
-      <Name>ILGarbageCollect</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\CCICodePlex\Ast\Metadata\Sources\MetadataHelper\MetadataHelper.csproj">
       <Project>{4A34A3C5-6176-49D7-A4C5-B2B671247F8F}</Project>

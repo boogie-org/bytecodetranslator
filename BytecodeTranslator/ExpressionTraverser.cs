@@ -18,7 +18,6 @@ using Microsoft.Cci.ILToCodeModel;
 using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 using TranslationPlugins;
-using BytecodeTranslator.Phone;
 
 
 namespace BytecodeTranslator
@@ -697,79 +696,59 @@ namespace BytecodeTranslator
       var translateAsFunctionCall = proc is Bpl.Function;
       bool isAsync = false;
 
-      // this code structure is quite chaotic, and some code needs to be evaluated regardless, hence the try-finally
-      try {
-        if (!translateAsFunctionCall) {
-          foreach (var a in resolvedMethod.Attributes) {
-            if (TypeHelper.GetTypeName(a.Type).EndsWith("AsyncAttribute")) {
-                isAsync = true;
-            }
+      if (!translateAsFunctionCall) {
+        foreach (var a in resolvedMethod.Attributes) {
+          if (TypeHelper.GetTypeName(a.Type).EndsWith("AsyncAttribute")) {
+              isAsync = true;
           }
         }
+      }
 
-        var deferringCtorCall = resolvedMethod.IsConstructor && methodCall.ThisArgument is IThisReference;
-        // REVIEW!! Ask Herman: is the above test enough? The following test is used in FindCtorCall.IsDeferringCtor,
-        // but it doesn't work when the type is a struct S because then "this" has a type of "&S".
-          //&& TypeHelper.TypesAreEquivalent(resolvedMethod.ContainingType, methodCall.ThisArgument.Type);
+      var deferringCtorCall = resolvedMethod.IsConstructor && methodCall.ThisArgument is IThisReference;
+      // REVIEW!! Ask Herman: is the above test enough? The following test is used in FindCtorCall.IsDeferringCtor,
+      // but it doesn't work when the type is a struct S because then "this" has a type of "&S".
+        //&& TypeHelper.TypesAreEquivalent(resolvedMethod.ContainingType, methodCall.ThisArgument.Type);
 
-        if (resolvedMethod.IsConstructor && resolvedMethod.ContainingTypeDefinition.IsStruct && !deferringCtorCall) {
-          handleStructConstructorCall(methodCall, methodCallToken, inexpr, outvars, thisExpr, proc);
+      if (resolvedMethod.IsConstructor && resolvedMethod.ContainingTypeDefinition.IsStruct && !deferringCtorCall) {
+        handleStructConstructorCall(methodCall, methodCallToken, inexpr, outvars, thisExpr, proc);
+        return;
+      }
+
+      Bpl.CallCmd call;
+      bool isEventAdd = resolvedMethod.IsSpecialName && resolvedMethod.Name.Value.StartsWith("add_");
+      bool isEventRemove = resolvedMethod.IsSpecialName && resolvedMethod.Name.Value.StartsWith("remove_");
+      if (isEventAdd || isEventRemove) {
+        call = translateAddRemoveCall(methodCall, resolvedMethod, methodCallToken, inexpr, outvars, thisExpr, isEventAdd);
+      } else {
+        if (translateAsFunctionCall) {
+          var func = proc as Bpl.Function;
+          var exprSeq = new List<Bpl.Expr>();
+          foreach (var e in inexpr) {
+            exprSeq.Add(e);
+          }
+          var callFunction = new Bpl.NAryExpr(methodCallToken, new Bpl.FunctionCall(func), exprSeq);
+          this.TranslatedExpressions.Push(callFunction);
           return;
-        }
-
-        Bpl.CallCmd call;
-        bool isEventAdd = resolvedMethod.IsSpecialName && resolvedMethod.Name.Value.StartsWith("add_");
-        bool isEventRemove = resolvedMethod.IsSpecialName && resolvedMethod.Name.Value.StartsWith("remove_");
-        if (isEventAdd || isEventRemove) {
-          call = translateAddRemoveCall(methodCall, resolvedMethod, methodCallToken, inexpr, outvars, thisExpr, isEventAdd);
         } else {
-          if (translateAsFunctionCall) {
-            var func = proc as Bpl.Function;
-            var exprSeq = new List<Bpl.Expr>();
-            foreach (var e in inexpr) {
-              exprSeq.Add(e);
-            }
-            var callFunction = new Bpl.NAryExpr(methodCallToken, new Bpl.FunctionCall(func), exprSeq);
-            this.TranslatedExpressions.Push(callFunction);
-            return;
-          } else {
-            EmitLineDirective(methodCallToken);
-            call = new Bpl.CallCmd(methodCallToken, methodname, inexpr, outvars);
-            call.IsAsync = isAsync;
-            this.StmtTraverser.StmtBuilder.Add(call);
-          }
+          EmitLineDirective(methodCallToken);
+          call = new Bpl.CallCmd(methodCallToken, methodname, inexpr, outvars);
+          call.IsAsync = isAsync;
+          this.StmtTraverser.StmtBuilder.Add(call);
         }
+      }
 
-        foreach (KeyValuePair<Bpl.IdentifierExpr, Tuple<Bpl.IdentifierExpr,bool>> kv in toBoxed) {
-          var lhs = kv.Key;
-          var tuple = kv.Value;
-          var rhs = tuple.Item1;
-          Bpl.Expr fromUnion = this.sink.Heap.FromUnion(Bpl.Token.NoToken, lhs.Type, rhs, tuple.Item2);
-          this.StmtTraverser.StmtBuilder.Add(TranslationHelper.BuildAssignCmd(lhs, fromUnion));
-        }
+      foreach (KeyValuePair<Bpl.IdentifierExpr, Tuple<Bpl.IdentifierExpr,bool>> kv in toBoxed) {
+        var lhs = kv.Key;
+        var tuple = kv.Value;
+        var rhs = tuple.Item1;
+        Bpl.Expr fromUnion = this.sink.Heap.FromUnion(Bpl.Token.NoToken, lhs.Type, rhs, tuple.Item2);
+        this.StmtTraverser.StmtBuilder.Add(TranslationHelper.BuildAssignCmd(lhs, fromUnion));
+      }
 
-        if (this.sink.Options.modelExceptions == 2
-          || (this.sink.Options.modelExceptions == 1 && this.sink.MethodThrowsExceptions(resolvedMethod))) {
-          Bpl.Expr expr = Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Neq, Bpl.Expr.Ident(this.sink.Heap.ExceptionVariable), Bpl.Expr.Ident(this.sink.Heap.NullRef));
-          this.StmtTraverser.RaiseException(expr);
-        }
-      } finally {
-        // TODO move away phone related code from the translation, it would be better to have 2 or more translation phases
-        if (PhoneCodeHelper.instance().PhonePlugin != null) {
-          if (PhoneCodeHelper.instance().PhoneNavigationToggled) {
-            if (PhoneCodeHelper.instance().isNavigationCall(methodCall)) {
-              Bpl.AssignCmd assignCmd = PhoneCodeHelper.instance().createBoogieNavigationUpdateCmd(sink);
-              this.StmtTraverser.StmtBuilder.Add(assignCmd);
-            }
-          }
-
-          if (PhoneCodeHelper.instance().PhoneFeedbackToggled) {
-            if (PhoneCodeHelper.instance().isMethodKnownUIChanger(methodCall)) {
-              Bpl.AssumeCmd assumeFalse = new Bpl.AssumeCmd(Bpl.Token.NoToken, Bpl.LiteralExpr.False);
-              this.StmtTraverser.StmtBuilder.Add(assumeFalse);
-            }
-          }
-        }
+      if (this.sink.Options.modelExceptions == 2
+        || (this.sink.Options.modelExceptions == 1 && this.sink.MethodThrowsExceptions(resolvedMethod))) {
+        Bpl.Expr expr = Bpl.Expr.Binary(Bpl.BinaryOperator.Opcode.Neq, Bpl.Expr.Ident(this.sink.Heap.ExceptionVariable), Bpl.Expr.Ident(this.sink.Heap.NullRef));
+        this.StmtTraverser.RaiseException(expr);
       }
     }
 
@@ -991,35 +970,7 @@ namespace BytecodeTranslator
       Contract.Assert(TranslatedExpressions.Count == 0);
       var tok = assignment.Token();
 
-      bool translationIntercepted= false;
-      ICompileTimeConstant constant= assignment.Source as ICompileTimeConstant;
-      // TODO move away phone related code from the translation, it would be better to have 2 or more translation phases
-      // NAVIGATION TODO maybe this will go away if I can handle it with stubs
-      if (PhoneCodeHelper.instance().PhonePlugin != null && PhoneCodeHelper.instance().PhoneNavigationToggled) {
-        IFieldReference target = assignment.Target.Definition as IFieldReference;
-        if (target != null && target.Name.Value == PhoneCodeHelper.IL_CURRENT_NAVIGATION_URI_VARIABLE) {
-          if (constant != null && constant.Type == sink.host.PlatformType.SystemString && constant.Value != null &&
-              constant.Value.Equals(PhoneCodeHelper.BOOGIE_DO_HAVOC_CURRENTURI)) {
-            TranslateHavocCurrentURI();
-            translationIntercepted = true;
-          }
-          StmtTraverser.StmtBuilder.Add(PhoneCodeHelper.instance().getAddNavigationCheck(sink));
-        }
-      }
-
-      if (!translationIntercepted)
-        TranslateAssignment(tok, assignment.Target.Definition, assignment.Target.Instance, assignment.Source);
-    }
-
-    /// <summary>
-    /// Patch, to account for URIs that cannot be tracked because of current dataflow restrictions
-    /// </summary>
-    private void TranslateHavocCurrentURI() {
-      // TODO move away phone related code from the translation, it would be better to have 2 or more translation phases
-      IMethodReference havocMethod= PhoneCodeHelper.instance().getUriHavocerMethod(sink);
-      Sink.ProcedureInfo procInfo= sink.FindOrCreateProcedure(havocMethod.ResolvedMethod);
-      Bpl.CallCmd havocCall = new Bpl.CallCmd(Bpl.Token.NoToken, procInfo.Decl.Name, new List<Bpl.Expr>(), new List<Bpl.IdentifierExpr>());
-      StmtTraverser.StmtBuilder.Add(havocCall);
+      TranslateAssignment(tok, assignment.Target.Definition, assignment.Target.Instance, assignment.Source);
     }
 
     /// <summary>

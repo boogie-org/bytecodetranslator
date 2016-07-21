@@ -19,11 +19,9 @@ using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 using Microsoft.Cci.MutableCodeModel.Contracts;
 using TranslationPlugins;
-using BytecodeTranslator.Phone;
 using System.Text.RegularExpressions;
 using BytecodeTranslator.TranslationPlugins;
 using BytecodeTranslator.TranslationPlugins.BytecodeTranslator;
-using BytecodeTranslator.TranslationPlugins.PhoneTranslator;
 
 namespace BytecodeTranslator {
 
@@ -59,15 +57,6 @@ namespace BytecodeTranslator {
 
     [OptionDescription("Stub assembly", ShortForm = "s")]
     public List<string>/*?*/ stub = null;
-
-    [OptionDescription("Phone translation controls configuration")]
-    public string phoneControls = null;
-
-    [OptionDescription("Add phone navigation code on translation. Requires /phoneControls. Default false", ShortForm = "wpnav")]
-    public bool phoneNavigationCode= false;
-
-    [OptionDescription("Add phone feedback code on translation. Requires /phoneControls. Default false", ShortForm = "wpfb")]
-    public bool phoneFeedbackCode = false;
 
     [OptionDescription("File containing white/black list (optionally end file name with + for white list, - for black list, default is white list", ShortForm = "exempt")]
     public string exemptionFile = "";
@@ -183,11 +172,6 @@ namespace BytecodeTranslator {
             return 1;
         }
 
-        if ((options.phoneFeedbackCode || options.phoneNavigationCode) && (options.phoneControls == null || options.phoneControls == "")) {
-          Console.WriteLine("Options /phoneNavigationCode and /phoneFeedbackCode need /phoneControls option set.");
-          return 1;
-        }
-
         var pgm = TranslateAssembly(assemblyNames, heap, options, exemptionList, whiteList);
         var fileName = assemblyNames[0];
         fileName = Path.GetFileNameWithoutExtension(fileName);
@@ -289,9 +273,6 @@ namespace BytecodeTranslator {
       var libPaths = options.libpaths;
       var wholeProgram = options.wholeProgram;
       var/*?*/ stubAssemblies = options.stub;
-      var phoneControlsConfigFile = options.phoneControls;
-      var doPhoneNav = options.phoneNavigationCode;
-      var doPhoneFeedback = options.phoneFeedbackCode;
 
       var host = new CodeContractAwareHostEnvironment(libPaths != null ? libPaths : Enumerable<string>.Empty, true, true);
       Host = host;
@@ -375,7 +356,7 @@ namespace BytecodeTranslator {
         throw new TranslationException("No input assemblies to translate.");
       }
 
-      var primaryModule = modules[0];
+      //var primaryModule = modules[0];
       Sink sink= new Sink(host, heapFactory, options, exemptionList, whiteList);
       TranslationHelper.tmpVarCounter = 0;
 
@@ -386,57 +367,8 @@ namespace BytecodeTranslator {
       Translator bcTranslator = bctPlugin.getTranslator(sink, contractExtractors, pdbReaders);
       translatorsPlugged.Add(bcTranslator);
 
-      if (phoneControlsConfigFile != null && phoneControlsConfigFile != "") {
-        // TODO this should be part of the translator initialziation
-        PhoneCodeHelper.initialize(host);
-        PhoneCodeHelper.instance().PhonePlugin = new PhoneControlsPlugin(phoneControlsConfigFile);
-
-        if (doPhoneNav) {
-          // TODO this should be part of the translator initialziation
-          PhoneCodeHelper.instance().PhoneNavigationToggled = true;
-
-          ITranslationPlugin phoneInitPlugin = new PhoneInitializationPlugin();
-          ITranslationPlugin phoneNavPlugin = new PhoneNavigationPlugin();
-          Translator phInitTranslator = phoneInitPlugin.getTranslator(sink, contractExtractors, pdbReaders);
-          Translator phNavTranslator = phoneNavPlugin.getTranslator(sink, contractExtractors, pdbReaders);
-          translatorsPlugged.Add(phInitTranslator);
-          translatorsPlugged.Add(phNavTranslator);
-        }
-
-        if (doPhoneFeedback) {
-          // TODO this should be part of the translator initialziation
-          PhoneCodeHelper.instance().PhoneFeedbackToggled = true;
-
-          ITranslationPlugin phoneFeedbackPlugin = new PhoneFeedbackPlugin();
-          Translator phFeedbackTranslator = phoneFeedbackPlugin.getTranslator(sink, contractExtractors, pdbReaders);
-          translatorsPlugged.Add(phFeedbackTranslator);
-        }
-      }
       #endregion
       sink.TranslationPlugins = translatorsPlugged;
-
-      /*
-      if (phoneControlsConfigFile != null && phoneControlsConfigFile != "") {
-        // TODO send this all way to initialization of phone plugin translator
-        PhoneCodeHelper.initialize(host);
-        PhoneCodeHelper.instance().PhonePlugin = new PhoneControlsPlugin(phoneControlsConfigFile);
-        
-        // TODO these parameters will eventually form part of plugin configuration
-        if (doPhoneNav) {
-          PhoneCodeHelper.instance().PhoneNavigationToggled = true;
-          PhoneInitializationMetadataTraverser initTr = new PhoneInitializationMetadataTraverser(host);
-          initTr.InjectPhoneCodeAssemblies(modules);
-          PhoneNavigationMetadataTraverser navTr = new PhoneNavigationMetadataTraverser(host);
-          navTr.InjectPhoneCodeAssemblies(modules);
-        }
-
-        if (doPhoneFeedback) {
-          PhoneCodeHelper.instance().PhoneFeedbackToggled = true;
-          PhoneControlFeedbackMetadataTraverser fbMetaDataTraverser= new PhoneControlFeedbackMetadataTraverser(host);
-          fbMetaDataTraverser.Visit(modules);
-        }
-      }
-      */
 
       // TODO replace the whole translation by a translator initialization and an orchestrator calling back for each element
       // TODO for the current BC translator it will possibly just implement onMetadataElement(IModule)
@@ -457,12 +389,6 @@ namespace BytecodeTranslator {
 
       // Subtyping for extern types
       if(sink.Options.typeInfo > 0) sink.DeclareExternTypeSubtyping();
-
-      string outputFileName = primaryModule.Name + ".bpl";
-      callPostTranslationTraversers(modules, sink, phoneControlsConfigFile, outputFileName);
-      if (PhoneCodeHelper.instance().PhoneNavigationToggled) {
-        finalizeNavigationAnalysisAndBoogieCode(phoneControlsConfigFile, sink, outputFileName);
-      }
 
       //sink.CreateIdentifierCorrespondenceTable(primaryModule.Name.Value);
 
@@ -490,113 +416,6 @@ namespace BytecodeTranslator {
       //}
       //sink.TranslatedProgram.TopLevelDeclarations = goodDecls;
       return sink.TranslatedProgram;
-    }
-
-
-    private static void finalizeNavigationAnalysisAndBoogieCode(string phoneControlsConfigFile, Sink sink, string outputFileName) {
-      outputBoogieTrackedControlConfiguration(phoneControlsConfigFile);
-      checkTransitivelyCalledBackKeyNavigations(modules);
-      createPhoneBoogieCallStubs(sink);
-      PhoneCodeHelper.instance().createQueriesBatchFile(sink, outputFileName);
-      outputBackKeyWarnings();
-    }
-
-    private static void callPostTranslationTraversers(List<IModule> modules, Sink sink, string phoneControlsConfigFile, string outputFileName) {
-      if (PhoneCodeHelper.instance().PhoneFeedbackToggled) {
-        PhoneCodeHelper.instance().CreateFeedbackCallingMethods(sink);
-      }
-
-      if (PhoneCodeHelper.instance().PhoneFeedbackToggled || PhoneCodeHelper.instance().PhoneNavigationToggled) {
-        PhoneMethodInliningMetadataTraverser inlineTraverser =
-          new PhoneMethodInliningMetadataTraverser(PhoneCodeHelper.instance());
-        inlineTraverser.findAllMethodsToInline(modules);
-        PhoneCodeHelper.updateInlinedMethods(sink, inlineTraverser.getMethodsToInline());
-        System.Console.WriteLine("Total methods seen: {0}, inlined: {1}", inlineTraverser.TotalMethodsCount, inlineTraverser.InlinedMethodsCount);
-
-        PhoneBackKeyCallbackTraverser traverser = new PhoneBackKeyCallbackTraverser(sink.host);
-        traverser.Traverse(modules);
-
-      }
-    }
-
-    private static void outputBoogieTrackedControlConfiguration(string phoneControlsConfigFile) {
-      string outputConfigFile = Path.ChangeExtension(phoneControlsConfigFile, "bplout");
-      StreamWriter outputStream = new StreamWriter(outputConfigFile);
-      PhoneCodeHelper.instance().PhonePlugin.DumpControlStructure(outputStream);
-      outputStream.Close();
-    }
-
-    private static void outputBackKeyWarnings() {
-      // NAVIGATION TODO for now I console this out
-      if (!PhoneCodeHelper.instance().OnBackKeyPressOverriden) {
-        Console.Out.WriteLine("No back navigation issues, OnBackKeyPress is not overriden");
-      } else if (PhoneCodeHelper.instance().BackKeyHandlerOverridenByUnknownDelegate) {
-        Console.Out.WriteLine("Back navigation ISSUE: BackKeyPress is overriden by unidentified delegate and may perform illegal navigation");
-        Console.Out.WriteLine("Offending pages:");
-        foreach (ITypeReference type in PhoneCodeHelper.instance().BackKeyUnknownDelegateOffenders) {
-          Console.WriteLine("\t" + type.ToString());
-        }
-      } else if (!PhoneCodeHelper.instance().BackKeyPressHandlerCancels && !PhoneCodeHelper.instance().BackKeyPressNavigates) {
-        Console.Out.WriteLine("No back navigation issues, BackKeyPress overrides do not alter navigation");
-      } else {
-        if (PhoneCodeHelper.instance().BackKeyPressNavigates) {
-          Console.Out.WriteLine("Back navigation ISSUE: back key press may navigate to pages not in backstack! From pages:");
-          foreach (ITypeReference type in PhoneCodeHelper.instance().BackKeyNavigatingOffenders.Keys) {
-            ICollection<Tuple<IMethodReference, string>> targets = PhoneCodeHelper.instance().BackKeyNavigatingOffenders[type];
-            Console.WriteLine("\t" + type.ToString() + " may navigate to ");
-            foreach (Tuple<IMethodReference, string> target in targets) {
-              Console.WriteLine("\t\t" + target.Item2 + " via " +
-                                (target.Item1.Name == Dummy.Name ? "anonymous delegate" : target.Item1.ContainingType.ToString() + "." + target.Item1.Name.Value));
-            }
-          }
-        }
-
-        if (PhoneCodeHelper.instance().BackKeyPressHandlerCancels) {
-          Console.Out.WriteLine("Back navigation ISSUE: back key press default behaviour may be cancelled! From pages:");
-          foreach (Tuple<ITypeReference, string> cancellation in PhoneCodeHelper.instance().BackKeyCancellingOffenders) {
-            Console.WriteLine("\t" + cancellation.Item1.ToString() + " via " + cancellation.Item2);
-          }
-        }
-      }
-    }
-
-    private static void createPhoneBoogieCallStubs(Sink sink) {
-      foreach (IMethodDefinition def in PhoneNavigationCodeTraverser.NavCallers) {
-        if (!PhoneCodeHelper.instance().isKnownBackKeyOverride(def))
-          PhoneCodeHelper.instance().addHandlerStubCaller(sink, def);
-      }
-      PhoneCodeHelper.instance().addNavigationUriHavocer(sink);
-    }
-
-    private static void checkTransitivelyCalledBackKeyNavigations(List<IModule> modules) {
-      foreach (IMethodReference navMethod in PhoneCodeHelper.instance().KnownBackKeyHandlers) {
-        // right now we traversed everything so we can see reachability
-        IEnumerable<IMethodDefinition> indirects = PhoneCodeHelper.instance().getIndirectNavigators(modules, navMethod);
-        if (indirects.Count() > 0) {
-          ICollection<Tuple<IMethodReference, string>> targets = null;
-          PhoneCodeHelper.instance().BackKeyNavigatingOffenders.TryGetValue(navMethod.ContainingType, out targets);
-          if (targets == null) {
-            targets = new HashSet<Tuple<IMethodReference, string>>();
-          }
-          string indirectTargeting = "<unknown indirect navigation> via (";
-          foreach (IMethodDefinition methDef in indirects) {
-            indirectTargeting += methDef.ContainingType.ToString() + "." + methDef.Name.Value + ", ";
-          }
-          indirectTargeting += ")";
-          targets.Add(Tuple.Create<IMethodReference, string>(navMethod, indirectTargeting));
-          PhoneCodeHelper.instance().BackKeyNavigatingOffenders[navMethod.ContainingType] = targets;
-        }
-
-        indirects = PhoneCodeHelper.instance().getIndirectCancellations(modules, navMethod);
-        if (indirects.Count() > 0) {
-          string indirectTargeting = "(";
-          foreach (IMethodDefinition methDef in indirects) {
-            indirectTargeting += methDef.ContainingType.ToString() + "." + methDef.Name.Value + ", ";
-          }
-          indirectTargeting += ")";
-          PhoneCodeHelper.instance().BackKeyCancellingOffenders.Add(Tuple.Create<ITypeReference, string>(navMethod.ContainingType, indirectTargeting));
-        }
-      }
     }
 
     private static string NameUpToFirstPeriod(string name) {
